@@ -35,15 +35,15 @@ MNEMONIC="your twelve word mnemonic phrase goes here and should be kept secret"
 ### 2. Basic Usage
 
 ```javascript
-import transactionManager from 'ecash-quicksend';
+import quick from 'ecash-quicksend';
 
 // Send XEC
-const xecResult = await transactionManager.sendXec([
+const xecResult = await quick.sendXec([
   { address: 'ecash:qq...', amount: 1000 } // 1000 satoshis
 ]);
 
 // Send SLP tokens
-const slpResult = await transactionManager.sendSlp([
+const slpResult = await quick.sendSlp([
   { address: 'ecash:qq...', amount: 100 }
 ], {
   tokenId: 'your-slp-token-id',
@@ -51,7 +51,7 @@ const slpResult = await transactionManager.sendSlp([
 });
 
 // Send ALP tokens
-const alpResult = await transactionManager.sendAlp([
+const alpResult = await quick.sendAlp([
   { address: 'ecash:qq...', amount: 100 }
 ], {
   tokenId: 'your-alp-token-id',
@@ -72,7 +72,7 @@ The main class that manages all transaction types.
 Send eCash (XEC) to one or more recipients.
 
 ```typescript
-await transactionManager.sendXec(
+await quick.sendXec(
   [{ address: 'ecash:qq...', amount: 1000 }],
   {
     utxoStrategy: 'all', // 'all' | 'largest' | 'smallest'
@@ -90,7 +90,7 @@ await transactionManager.sendXec(
 Send SLP tokens to one or more recipients.
 
 ```typescript
-await transactionManager.sendSlp(
+await quick.sendSlp(
   [{ address: 'ecash:qq...', amount: 100 }],
   {
     tokenId: 'your-token-id',
@@ -107,7 +107,7 @@ await transactionManager.sendSlp(
 Send ALP tokens to one or more recipients.
 
 ```typescript
-await transactionManager.sendAlp(
+await quick.sendAlp(
   [{ address: 'ecash:qq...', amount: 100 }],
   {
     tokenId: 'your-token-id',
@@ -125,19 +125,19 @@ Universal send method supporting all transaction types.
 
 ```typescript
 // Send XEC
-await transactionManager.send('xec', recipients, {
+await quick.send('xec', recipients, {
   utxoStrategy: 'all',
   addressIndex: 0
 });
 
 // Send SLP
-await transactionManager.send('slp', recipients, {
+await quick.send('slp', recipients, {
   tokenId: 'your-token-id',
   tokenDecimals: 8
 });
 
 // Send ALP
-await transactionManager.send('alp', recipients, {
+await quick.send('alp', recipients, {
   tokenId: 'your-token-id',
   tokenDecimals: 8
 });
@@ -192,7 +192,7 @@ interface XecTransactionOptions {
 
 ```javascript
 // Send to multiple recipients in a single transaction
-await transactionManager.sendXec([
+await quick.sendXec([
   { address: 'ecash:qq...', amount: 1000 },
   { address: 'ecash:qp...', amount: 2000 },
   { address: 'ecash:qr...', amount: 500 }
@@ -203,28 +203,28 @@ await transactionManager.sendXec([
 
 ```javascript
 // Use largest UTXO first (good for consolidation)
-await transactionManager.sendXec(recipients, { utxoStrategy: 'largest' });
+await quick.sendXec(recipients, { utxoStrategy: 'largest' });
 
 // Use smallest UTXO first (good for privacy)
-await transactionManager.sendXec(recipients, { utxoStrategy: 'smallest' });
+await quick.sendXec(recipients, { utxoStrategy: 'smallest' });
 
 // Use all available UTXOs (default)
-await transactionManager.sendXec(recipients, { utxoStrategy: 'all' });
+await quick.sendXec(recipients, { utxoStrategy: 'all' });
 ```
 
 ### Address Index Management
 
 ```javascript
 // Use different derived addresses
-await transactionManager.sendXec(recipients, { addressIndex: 1 });
-await transactionManager.sendSlp(recipients, options, { addressIndex: 2 });
+await quick.sendXec(recipients, { addressIndex: 1 });
+await quick.sendSlp(recipients, options, { addressIndex: 2 });
 ```
 
 ## Error Handling
 
 ```javascript
 try {
-  const result = await transactionManager.sendXec(recipients);
+  const result = await quick.sendXec(recipients);
   
   if (result.success) {
     console.log(`Transaction successful: ${result.txid}`);

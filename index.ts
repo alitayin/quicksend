@@ -97,11 +97,11 @@ class TransactionManager {
 }
 
 // 创建单例实例
-const transactionManager = new TransactionManager();
+const quick = new TransactionManager();
 
 // 导出实例和类
-export default transactionManager;
+export default quick;
 export { TransactionManager };
 
 // 便捷方法导出
-export const { sendSlp, sendAlp, sendXec, send } = transactionManager; 
+export const { sendSlp, sendAlp, sendXec, send } = quick; 
