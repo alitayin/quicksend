@@ -192,8 +192,8 @@ function selectSlpUtxos(
     throw new Error('没有可用的非SLP UTXOs用于支付手续费');
   }
 
-  // 计算需要发送的代币总量
-  const sendAmounts = recipients.map(r => BigInt(r.amount * (10 ** tokenDecimals)));
+  // 计算需要发送的代币总量（直接使用基础单位，不进行小数转换）
+  const sendAmounts = recipients.map(r => BigInt(r.amount));
   const totalSendTokens = sendAmounts.reduce((acc, val) => acc + val, 0n);
 
   // 选择代币UTXOs
