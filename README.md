@@ -44,18 +44,18 @@ const xecResult = await quick.sendXec([
 
 // Send SLP tokens
 const slpResult = await quick.sendSlp([
-  { address: 'ecash:qq...', amount: 100 }
+  { address: 'ecash:qq...', amount: 100 } // 100 base units = 1.00 token
 ], {
   tokenId: 'your-slp-token-id',
-  tokenDecimals: 8
+  tokenDecimals: 2
 });
 
 // Send ALP tokens
 const alpResult = await quick.sendAlp([
-  { address: 'ecash:qq...', amount: 100 }
+  { address: 'ecash:qq...', amount: 100 } // 100 base units = 0.01 token
 ], {
   tokenId: 'your-alp-token-id',
-  tokenDecimals: 8
+  tokenDecimals: 4
 });
 ```
 
@@ -194,8 +194,7 @@ interface XecTransactionOptions {
 // Send to multiple recipients in a single transaction
 await quick.sendXec([
   { address: 'ecash:qq...', amount: 1000 },
-  { address: 'ecash:qp...', amount: 2000 },
-  { address: 'ecash:qr...', amount: 500 }
+  { address: 'ecash:qp...', amount: 2000 }
 ]);
 ```
 
@@ -225,31 +224,39 @@ await quick.sendSlp(recipients, options, { addressIndex: 2 });
 ```javascript
 try {
   const result = await quick.sendXec(recipients);
-  
-  if (result.success) {
-    console.log(`Transaction successful: ${result.txid}`);
-  } else {
-    console.error(`Transaction failed: ${result.message}`);
-  }
+  console.log('Success:', result.txid);
 } catch (error) {
-  console.error('Transaction error:', error.message);
+  console.error('Failed:', error.message);
+}
+```
+
+## Types
+
+```typescript
+interface Recipient {
+  address: string;  // eCash address
+  amount: number;   // Amount in base units
+}
+
+interface TransactionResult {
+  txid: string;
+  success: boolean;
+  message?: string;
 }
 ```
 
 ## Requirements
 
 - Node.js >= 18.0.0
-- A valid eCash wallet mnemonic phrase
-- Network access to eCash blockchain
+- Valid eCash wallet mnemonic phrase
 
 ## License
 
 MIT
 
-## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Support
 
-If you encounter any issues or have questions, please [open an issue](https://github.com/alitayin/quicksend/issues) on GitHub. 
+[Issues](https://github.com/alitayin/quicksend/issues) | [GitHub](https://github.com/alitayin/quicksend) 
