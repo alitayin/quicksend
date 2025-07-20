@@ -1,0 +1,67 @@
+{
+  "name": "ecash-quicksend",
+  "version": "1.0.0",
+  "description": "A unified transaction manager for eCash (XEC), SLP, and ALP token transactions",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "type-check": "tsc --noEmit",
+    "dev": "tsx"
+  },
+  "keywords": [
+    "ecash",
+    "xec",
+    "slp",
+    "alp",
+    "cryptocurrency",
+    "bitcoin",
+    "cash",
+    "tokens",
+    "transaction",
+    "blockchain"
+  ],
+  "author": "alitayin",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alitayin/quicksend.git"
+  },
+  "bugs": {
+    "url": "https://github.com/alitayin/quicksend/issues"
+  },
+  "homepage": "https://github.com/alitayin/quicksend#readme",
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "chronik-client": "^3.1.1",
+    "dotenv": "^16.5.0",
+    "ecash-lib": "^3.2.0",
+    "ecashaddrjs": "^2.0.0",
+    "wif": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.14",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {},
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  }
+}
