@@ -24,14 +24,21 @@ interface WalletInfo {
 /**
  * 初始化钱包 - 优化版本，只调用一次 deriveBuyerKey
  * @param addressIndex - 地址索引，默认为0
+ * @param mnemonic - 可选：直接提供助记词，否则从环境变量获取
  * @returns 钱包相关的密钥、脚本和地址
  */
-export function initializeWallet(addressIndex: number = 0): WalletInfo {
-  const mnemonic = getMnemonic();
+export function initializeWallet(addressIndex: number = 0, mnemonic?: string): WalletInfo {
+  // 如果提供了助记词参数就使用，否则从环境变量获取
+  const finalMnemonic = mnemonic || getMnemonic();
+  
+  if (!finalMnemonic) {
+    throw new Error('助记词未设置：请在环境变量中设置 MNEMONIC 或在函数调用中提供助记词参数');
+  }
+  
   console.log('使用助记词派生私钥...');
   
   // 只调用一次 deriveBuyerKey，获取完整信息
-  const derived = deriveBuyerKey(mnemonic, addressIndex);
+  const derived = deriveBuyerKey(finalMnemonic, addressIndex);
   
   const ecc = new Ecc();
   const decoded = wif.decode(derived.wif);

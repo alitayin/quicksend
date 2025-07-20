@@ -122,11 +122,12 @@ async function createTokenTransaction(
       tokenDecimals, 
       addressIndex = 0,
       feeStrategy = 'all', 
-      tokenStrategy = 'all' 
+      tokenStrategy = 'all',
+      mnemonic // 新增：从选项中提取助记词
     } = options;
 
-    // 初始化钱包 - 使用指定的地址索引
-    const { walletSk, walletPk, walletP2pkh, address: utxoAddress } = initializeWallet(addressIndex);
+    // 初始化钱包 - 使用指定的地址索引和可选的助记词
+    const { walletSk, walletPk, walletP2pkh, address: utxoAddress } = initializeWallet(addressIndex, mnemonic);
     
     const utxos = await getUtxos(utxoAddress);
     if (utxos.length === 0) {

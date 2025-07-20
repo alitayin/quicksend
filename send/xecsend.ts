@@ -34,7 +34,8 @@ interface XecTransactionResult extends TransactionResult {
 export async function createRawXecTransaction(
   recipients: ExtendedRecipient[], 
   utxoStrategy: string = 'all', 
-  addressIndex: number = 0
+  addressIndex: number = 0,
+  mnemonic?: string // 新增：可选的助记词参数
 ): Promise<XecTransactionResult> {
   try {
     // 验证参数
@@ -59,8 +60,8 @@ export async function createRawXecTransaction(
       }
     }
 
-    // 初始化钱包 - 使用指定的地址索引
-    const { walletSk, walletPk, walletP2pkh, address: utxoAddress } = initializeWallet(addressIndex);
+    // 初始化钱包 - 使用指定的地址索引和可选的助记词
+    const { walletSk, walletPk, walletP2pkh, address: utxoAddress } = initializeWallet(addressIndex, mnemonic);
     
     const utxos = await getUtxos(utxoAddress);
     if (utxos.length === 0) {

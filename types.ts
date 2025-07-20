@@ -51,6 +51,7 @@ export interface TokenTransactionOptions {
   addressIndex?: number;
   feeStrategy?: string;
   tokenStrategy?: string;
+  mnemonic?: string; // 可选：如果提供则使用，否则从环境变量读取
 }
 
 /**
@@ -59,6 +60,7 @@ export interface TokenTransactionOptions {
 export interface XecTransactionOptions {
   utxoStrategy?: string;
   addressIndex?: number;
+  mnemonic?: string; // 可选：如果提供则使用，否则从环境变量读取
 }
 
 /**
@@ -76,6 +78,7 @@ export interface GeneralSendOptions {
   tokenDecimals?: number;
   feeStrategy?: string;
   tokenStrategy?: string;
+  mnemonic?: string; // 可选：如果提供则使用，否则从环境变量读取
 }
 
 /**
