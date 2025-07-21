@@ -1,5 +1,5 @@
 import { createRawSlpTransaction, createRawAlpTransaction } from './send/tokensend';
-import { createRawXecTransaction } from './send/xecsend.js';
+import { createRawXecTransaction } from './send/xecsend';
 import { 
   Recipient, 
   TransactionResult, 

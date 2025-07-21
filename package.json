@@ -1,10 +1,9 @@
 {
   "name": "ecash-quicksend",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A unified transaction manager for eCash (XEC), SLP, and ALP token transactions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "type": "module",
   "engines": {
     "node": ">=18.0.0"
   },

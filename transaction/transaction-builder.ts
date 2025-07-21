@@ -1,5 +1,5 @@
 import { chronik } from "../client/chronik-client";
-import ecashLib from "ecash-lib";
+import * as ecashLib from "ecash-lib";
 import { ChronikClient } from "chronik-client";
 
 const { TxBuilder, toHex } = ecashLib;

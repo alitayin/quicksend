@@ -1,7 +1,7 @@
 import { getMnemonic } from '../config/constants';
 import { deriveBuyerKey } from './mnemonic-utils';
 import * as wif from 'wif';
-import ecashLib from 'ecash-lib';
+import * as ecashLib from 'ecash-lib';
 
 const {
   Ecc,

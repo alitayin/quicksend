@@ -1,12 +1,19 @@
-import ecashLib from 'ecash-lib';
+import * as ecashLib from 'ecash-lib';
 import { decodeCashAddress } from 'ecashaddrjs';
-import { Utxo } from '../types';
 
 const {
   P2PKHSignatory,
   ALL_BIP143,
   Script,
 } = ecashLib;
+
+// UTXO接口
+interface Utxo {
+  txid: string;
+  vout: number;
+  value: number;
+  [key: string]: any;
+}
 
 // 交易输入接口
 interface TransactionInput {
