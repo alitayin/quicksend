@@ -1,6 +1,7 @@
 import { decodeCashAddress } from 'ecashaddrjs';
 import { chronik } from '../client/chronik-client';
 import { Utxo, SlpToken, Recipient } from '../types';
+import { ChronikClient } from 'chronik-client';
 
 // UTXO选择结果接口
 interface UtxoSelection {
@@ -63,12 +64,15 @@ type UtxoStrategy = 'all' | 'minimal' | 'largest_first';
 /**
  * Get UTXOs for a given address
  * @param address - eCash address
+ * @param chronikClient - Optional chronik client instance (uses default if not provided)
  * @returns Array of UTXOs
  */
-async function getUtxos(address: string): Promise<Utxo[]> {
+async function getUtxos(address: string, chronikClient?: ChronikClient): Promise<Utxo[]> {
   const { type, hash } = decodeCashAddress(address);
+  const client = chronikClient || chronik; // 使用传入的chronik客户端或默认的
+  
   try {
-    const utxosResponse = await chronik.script(type, hash).utxos();
+    const utxosResponse = await client.script(type, hash).utxos();
 
     if (!utxosResponse || !utxosResponse.utxos) {
       throw new Error('utxosResponse does not contain utxos property');
@@ -289,11 +293,12 @@ function selectSlpUtxos(
 /**
  * 获取地址余额信息
  * @param address - eCash地址
+ * @param chronikClient - Optional chronik client instance (uses default if not provided)
  * @returns 余额信息
  */
-async function getAddressBalance(address: string): Promise<AddressBalance> {
+async function getAddressBalance(address: string, chronikClient?: ChronikClient): Promise<AddressBalance> {
   try {
-    const utxos = await getUtxos(address);
+    const utxos = await getUtxos(address, chronikClient);
     const nonSlpUtxos = utxos.filter(utxo => !utxo.slpToken);
     const slpUtxos = utxos.filter(utxo => utxo.slpToken);
     

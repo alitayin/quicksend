@@ -1,5 +1,8 @@
 // 基础接口定义
 
+// 引入ChronikClient类型
+import { ChronikClient } from "chronik-client";
+
 /**
  * 交易接收方
  */
@@ -52,6 +55,7 @@ export interface TokenTransactionOptions {
   feeStrategy?: string;
   tokenStrategy?: string;
   mnemonic?: string; // 可选：如果提供则使用，否则从环境变量读取
+  chronik?: ChronikClient; // 新增：可选的chronik实例
 }
 
 /**
@@ -61,6 +65,7 @@ export interface XecTransactionOptions {
   utxoStrategy?: string;
   addressIndex?: number;
   mnemonic?: string; // 可选：如果提供则使用，否则从环境变量读取
+  chronik?: ChronikClient; // 新增：可选的chronik实例
 }
 
 /**
@@ -79,6 +84,7 @@ export interface GeneralSendOptions {
   feeStrategy?: string;
   tokenStrategy?: string;
   mnemonic?: string; // 可选：如果提供则使用，否则从环境变量读取
+  chronik?: ChronikClient; // 新增：可选的chronik实例
 }
 
 /**

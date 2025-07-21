@@ -10,7 +10,6 @@ import {
   validateRequiredParams, 
   logTransactionSummary 
 } from "../transaction/transaction-builder";
-import { getDefaultUtxoAddress } from "../config/constants";
 import { Recipient, TokenTransactionOptions, TransactionResult } from "../types";
 
 const { 
@@ -123,13 +122,14 @@ async function createTokenTransaction(
       addressIndex = 0,
       feeStrategy = 'all', 
       tokenStrategy = 'all',
-      mnemonic // 新增：从选项中提取助记词
+      mnemonic, // 从选项中提取助记词
+      chronik: chronikClient // 新增：从选项中提取chronik客户端
     } = options;
 
     // 初始化钱包 - 使用指定的地址索引和可选的助记词
     const { walletSk, walletPk, walletP2pkh, address: utxoAddress } = initializeWallet(addressIndex, mnemonic);
     
-    const utxos = await getUtxos(utxoAddress);
+    const utxos = await getUtxos(utxoAddress, chronikClient); // 传递chronik客户端
     if (utxos.length === 0) {
       throw new Error(`No UTXOs found for address index ${addressIndex}`);
     }
@@ -170,7 +170,7 @@ async function createTokenTransaction(
     }
 
     // 构建并广播交易
-    return await buildAndBroadcastTransaction(inputs, outputs, { dustLimit });
+    return await buildAndBroadcastTransaction(inputs, outputs, { dustLimit, chronik: chronikClient }); // 传递chronik客户端
 
   } catch (error) {
     console.error(`${tokenType} transaction creation failed:`, error);

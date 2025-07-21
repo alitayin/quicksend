@@ -77,6 +77,7 @@ await quick.sendAlp([
   utxoStrategy?: 'all' | 'minimal' | 'largest_first';
   addressIndex?: number;
   mnemonic?: string;
+  chronik?: ChronikClient;
 }
 
 // Token Options (SLP/ALP)
@@ -87,6 +88,7 @@ await quick.sendAlp([
   feeStrategy?: 'all' | 'minimal' | 'largest_first';
   tokenStrategy?: 'all' | 'largest' | 'minimal';
   mnemonic?: string;
+  chronik?: ChronikClient;
 }
 ```
 
@@ -115,6 +117,17 @@ await quick.send('xec', recipients);
 await quick.send('slp', recipients, {
   tokenId: 'token-id',
   tokenDecimals: 2
+});
+
+// Custom chronik client
+import { ChronikClient } from 'chronik-client';
+const customChronik = new ChronikClient('https://your-chronik-url.com');
+
+await quick.sendXec(recipients, { chronik: customChronik });
+await quick.sendSlp(recipients, {
+  tokenId: 'token-id',
+  tokenDecimals: 2,
+  chronik: customChronik
 });
 ```
 

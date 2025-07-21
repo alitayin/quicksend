@@ -1,6 +1,6 @@
 import { chronik } from "../client/chronik-client";
 import ecashLib from "ecash-lib";
-import { TransactionResult } from "../types";
+import { ChronikClient } from "chronik-client";
 
 const { TxBuilder, toHex } = ecashLib;
 
@@ -9,6 +9,14 @@ interface TransactionOptions {
   feePerKb?: bigint;
   dustSats?: bigint;
   dustLimit?: number;
+  chronik?: ChronikClient; // 新增：可选的chronik实例
+}
+
+// 交易结果接口
+interface TransactionResult {
+  explorerLink: string;
+  broadcastResult: string;
+  txid: string;
 }
 
 // 必需参数配置接口
@@ -33,8 +41,11 @@ export async function buildAndBroadcastTransaction(
   const {
     feePerKb = 1000n,
     dustSats = 546n,
-    dustLimit = 546
+    dustLimit = 546,
+    chronik: chronikClient // 提取chronik客户端
   } = options;
+
+  const client = chronikClient || chronik; // 使用传入的chronik客户端或默认的
 
   try {
     // 构建交易
@@ -50,7 +61,7 @@ export async function buildAndBroadcastTransaction(
     const rawTxHex = toHex(tx.ser());
 
     // 广播交易
-    const broadcastResponse = await chronik.broadcastTx(rawTxHex);
+    const broadcastResponse = await client.broadcastTx(rawTxHex);
     if (!broadcastResponse) {
       throw new Error("Empty Chronik broadcast response");
     }

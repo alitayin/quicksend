@@ -5,7 +5,6 @@ import { getUtxos, selectUtxos } from '../utxo/utxo-utils';
 import { initializeWallet } from '../wallet/wallet-utils';
 import { buildTransactionInputs, createP2pkhScript } from '../transaction/transaction-utils';
 import { buildAndBroadcastTransaction, logTransactionSummary } from '../transaction/transaction-builder';
-import { getDefaultUtxoAddress } from '../config/constants';
 import { TransactionResult } from '../types';
 
 // 扩展的接收方接口，支持代币交易
@@ -35,7 +34,8 @@ export async function createRawXecTransaction(
   recipients: ExtendedRecipient[], 
   utxoStrategy: string = 'all', 
   addressIndex: number = 0,
-  mnemonic?: string // 新增：可选的助记词参数
+  mnemonic?: string, // 可选的助记词参数
+  chronikClient?: any // 新增：可选的chronik客户端参数 (使用any类型以避免循环依赖)
 ): Promise<XecTransactionResult> {
   try {
     // 验证参数
@@ -63,7 +63,7 @@ export async function createRawXecTransaction(
     // 初始化钱包 - 使用指定的地址索引和可选的助记词
     const { walletSk, walletPk, walletP2pkh, address: utxoAddress } = initializeWallet(addressIndex, mnemonic);
     
-    const utxos = await getUtxos(utxoAddress);
+    const utxos = await getUtxos(utxoAddress, chronikClient); // 传递chronik客户端
     if (utxos.length === 0) {
       throw new Error(`No UTXOs found for address index ${addressIndex}`);
     }
@@ -123,7 +123,7 @@ export async function createRawXecTransaction(
     outputs.push(walletP2pkh);
 
     // 构建并广播交易
-    const result = await buildAndBroadcastTransaction(inputs, outputs);
+    const result = await buildAndBroadcastTransaction(inputs, outputs, { chronik: chronikClient }); // 传递chronik客户端
     
     return {
       ...result,
