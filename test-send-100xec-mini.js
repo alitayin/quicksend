@@ -1,4 +1,5 @@
-import quick from './index.ts';
+// test-send-100xec.mjs
+import quick from './dist/index.js';  // 改成 dist/index.js
 
 const recipients = [
   {

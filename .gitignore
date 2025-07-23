@@ -18,6 +18,7 @@ dist/
 test-send-100xec.js
 test-mnemonic.js
 test-send-100xecx.js
+test-send-100xec-mini.mjs
 PUBLISH_GUIDE.md
 
 # IDE and editor files
