@@ -95,7 +95,11 @@ async function getUtxos(address: string, chronikClient?: ChronikClient): Promise
       vout: utxo.outpoint.outIdx,
       value: Number(utxo.sats),
       address: address,
-      slpToken: utxo.token,
+      slpToken: utxo.token ? {
+        tokenId: utxo.token.tokenId,
+        atoms: utxo.token.atoms,
+        isMintBaton: utxo.token.isMintBaton ?? false,
+      } : undefined,
     }));
     return utxos;
   } catch (err) {
@@ -196,8 +200,10 @@ function selectSlpUtxos(
   } = options;
 
   // 分离SLP和非SLP UTXOs
-  const slpUtxos = utxos.filter(utxo => 
-    utxo.slpToken && utxo.slpToken.tokenId === tokenId
+  const slpUtxos = utxos.filter(utxo =>
+    utxo.slpToken &&
+    utxo.slpToken.tokenId === tokenId &&
+    !utxo.slpToken.isMintBaton // never spend mint batons as regular send inputs
   );
   const nonSlpUtxos = utxos.filter(utxo => !utxo.slpToken);
 

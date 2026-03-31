@@ -29,6 +29,7 @@ export interface Utxo {
 export interface SlpToken {
   tokenId: string;
   atoms: string | bigint;
+  isMintBaton: boolean; // Mint baton UTXOs must never be spent as regular send inputs
   [key: string]: any;
 }
 
