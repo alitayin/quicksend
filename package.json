@@ -1,6 +1,6 @@
 {
   "name": "ecash-quicksend",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A unified transaction manager for eCash (XEC), SLP, and ALP token transactions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,7 +12,7 @@
     "build:watch": "tsc --watch",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test ./test/*.test.js ./test/unit/*.test.js",
     "type-check": "tsc --noEmit",
     "dev": "tsx"
   },
@@ -59,7 +59,6 @@
   "peerDependencies": {},
   "exports": {
     ".": {
-      "require": "./dist/index.js",
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
