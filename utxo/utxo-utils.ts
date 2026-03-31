@@ -116,7 +116,7 @@ function selectUtxos(utxos: Utxo[], sendAmount: number, strategy: UtxoStrategy =
   const nonSlpUtxos = utxos.filter(utxo => !utxo.slpToken);
   
   if (nonSlpUtxos.length === 0) {
-    throw new Error('没有可用的非SLP UTXOs');
+    throw new Error('No non-SLP UTXOs available');
   }
 
   let selectedUtxos: Utxo[] = [];
@@ -151,7 +151,7 @@ function selectUtxos(utxos: Utxo[], sendAmount: number, strategy: UtxoStrategy =
       break;
       
     default:
-      throw new Error(`未知的UTXO选择策略: ${strategy}`);
+      throw new Error(`Unknown UTXO selection strategy: ${strategy}`);
   }
 
   const totalInputValue = selectedUtxos.reduce((sum, utxo) => sum + utxo.value, 0);
@@ -160,7 +160,7 @@ function selectUtxos(utxos: Utxo[], sendAmount: number, strategy: UtxoStrategy =
   // 检查余额是否足够
   if (totalInputValue < sendAmount + estimatedFee) {
     throw new Error(
-      `余额不足。总输入: ${totalInputValue}, 需要: ${sendAmount + estimatedFee} (包含预估手续费 ${estimatedFee})`
+      `Insufficient balance. Total input: ${totalInputValue}, required: ${sendAmount + estimatedFee} (including estimated fee ${estimatedFee})`
     );
   }
 
@@ -183,10 +183,10 @@ function selectUtxos(utxos: Utxo[], sendAmount: number, strategy: UtxoStrategy =
  * @returns 包含选择的UTXOs和相关信息
  */
 function selectSlpUtxos(
-  utxos: Utxo[], 
-  tokenId: string, 
-  recipients: Recipient[], 
-  tokenDecimals: number, 
+  utxos: Utxo[],
+  tokenId: string,
+  recipients: Recipient[],
+  tokenDecimals: number = 0,
   options: SlpUtxoOptions = {}
 ): SlpUtxoSelection {
   const {
@@ -202,10 +202,10 @@ function selectSlpUtxos(
   const nonSlpUtxos = utxos.filter(utxo => !utxo.slpToken);
 
   if (slpUtxos.length === 0) {
-    throw new Error(`没有可用的 ${tokenId} SLP UTXOs`);
+    throw new Error(`No SLP UTXOs available for token ${tokenId}`);
   }
   if (nonSlpUtxos.length === 0) {
-    throw new Error('没有可用的非SLP UTXOs用于支付手续费');
+    throw new Error('No non-SLP UTXOs available for fee payment');
   }
 
   // 计算需要发送的代币总量（直接使用基础单位，不进行小数转换）
@@ -240,14 +240,14 @@ function selectSlpUtxos(
       });
     
     if (sortedSlpUtxos.length === 0) {
-      throw new Error('没有足够的代币余额');
+      throw new Error('Insufficient token balance');
     }
     selectedTokenUtxos = [sortedSlpUtxos[0]];
     totalTokens = BigInt(sortedSlpUtxos[0].slpToken!.atoms);
   }
   
   if (totalSendTokens > totalTokens) {
-    throw new Error(`代币余额不足。可用: ${totalTokens.toString()}, 需要: ${totalSendTokens.toString()}`);
+    throw new Error(`Insufficient token balance. Available: ${totalTokens.toString()}, required: ${totalSendTokens.toString()}`);
   }
 
   const tokenChange = totalTokens - totalSendTokens;
@@ -273,7 +273,7 @@ function selectSlpUtxos(
   
   if (totalFeeInputValue < requiredAmount) {
     throw new Error(
-      `手续费余额不足。总输入: ${totalFeeInputValue}, 需要: ${requiredAmount} (包含预估手续费 ${estimatedFee})`
+      `Insufficient balance for fees. Total input: ${totalFeeInputValue}, required: ${requiredAmount} (including estimated fee ${estimatedFee})`
     );
   }
 
@@ -344,7 +344,7 @@ async function getAddressBalance(address: string, chronikClient?: ChronikClient)
       tokenBalances: Object.values(tokenBalances)
     };
   } catch (error) {
-    console.error('获取地址余额失败:', error);
+    console.error('Failed to get address balance:', error);
     throw error;
   }
 }

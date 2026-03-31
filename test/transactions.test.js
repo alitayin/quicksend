@@ -283,14 +283,13 @@ describe('sendSlp', () => {
         );
     });
 
-    test('throws when tokenDecimals is missing', async () => {
+    test('succeeds without tokenDecimals (amount treated as atoms)', async () => {
         const chronik = new FakeChronik([UTXO_SLP_150, UTXO_FEE_20K]);
-        await assert.rejects(
+        await assert.doesNotReject(
             () => sendSlp(
                 [{ address: ADDR_1, amount: 100 }],
                 { mnemonic: TEST_MNEMONIC, tokenId: TOKEN_ID_SLP, chronik },
             ),
-            /tokenDecimals is required/,
         );
     });
 });

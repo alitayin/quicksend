@@ -99,12 +99,11 @@ async function createTokenTransaction(
     // 验证必需参数
     validateRequiredParams(options, [
       { key: 'tokenId', message: 'tokenId is required' },
-      { key: 'tokenDecimals', message: 'tokenDecimals is required', checkUndefined: true }
     ]);
 
-    const { 
-      tokenId, 
-      tokenDecimals, 
+    const {
+      tokenId,
+      tokenDecimals = 0, // 默认0：amount 直接作为 atoms 使用
       addressIndex = 0,
       feeStrategy = 'all', 
       tokenStrategy = 'all',

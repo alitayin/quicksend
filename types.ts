@@ -50,7 +50,7 @@ export interface TransactionResult {
  */
 export interface TokenTransactionOptions {
   tokenId: string;
-  tokenDecimals: number;
+  tokenDecimals?: number; // 可选，向后兼容；amount 直接以 atoms（最小单位）表示
   addressIndex?: number;
   feeStrategy?: string;
   tokenStrategy?: string;

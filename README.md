@@ -11,14 +11,33 @@ A unified transaction manager for eCash (XEC), SLP, and ALP token transactions.
 npm install ecash-quicksend
 ```
 
+## Migration Notes
+
+### v1.1.0+
+This library no longer calls `dotenv.config()` internally. If you rely on a `.env` file for your mnemonic, call `dotenv.config()` in your own application entry point before using this library:
+
+```javascript
+import dotenv from 'dotenv';
+dotenv.config(); // call this yourself
+
+import quick from 'ecash-quicksend';
+```
+
+### v1.3.0+
+`tokenDecimals` is now optional. `amount` in token recipients is in **atoms** (smallest unit). `tokenDecimals` is kept for backward compatibility but has no effect.
+
+---
+
 ## Quick Start
 
 ### Setup
 
-**Option 1: Environment Variable (Recommended)**
-```env
-# .env file
-MNEMONIC="your twelve word mnemonic phrase"
+**Option 1: Environment Variable**
+```javascript
+// In your app entry point:
+import dotenv from 'dotenv';
+dotenv.config();
+// Then set MNEMONIC in your .env file
 ```
 
 **Option 2: Direct in Code**
@@ -43,20 +62,18 @@ await quick.sendXec([
   mnemonic: 'your twelve word mnemonic phrase'
 });
 
-// Send SLP tokens
+// Send SLP tokens — amount in atoms (smallest unit)
 await quick.sendSlp([
-  { address: 'ecash:qq...', amount: 100 } // 1.00 token
+  { address: 'ecash:qq...', amount: 100 } // 100 atoms
 ], {
   tokenId: 'your-token-id',
-  tokenDecimals: 2
 });
 
-// Send ALP tokens
+// Send ALP tokens — amount in atoms (smallest unit)
 await quick.sendAlp([
-  { address: 'ecash:qq...', amount: 100 } // 0.01 token
+  { address: 'ecash:qq...', amount: 100 } // 100 atoms
 ], {
   tokenId: 'your-token-id',
-  tokenDecimals: 4
 });
 ```
 
@@ -82,8 +99,8 @@ await quick.sendAlp([
 
 // Token Options (SLP/ALP)
 {
-  tokenId: string;
-  tokenDecimals: number;
+  tokenId: string;                               // required
+  tokenDecimals?: number;                        // optional, ignored (kept for backward compatibility)
   addressIndex?: number;
   feeStrategy?: 'all' | 'minimal' | 'largest_first';
   tokenStrategy?: 'all' | 'largest' | 'minimal';
@@ -116,7 +133,6 @@ await quick.sendXec(recipients, { addressIndex: 1 });
 await quick.send('xec', recipients);
 await quick.send('slp', recipients, {
   tokenId: 'token-id',
-  tokenDecimals: 2
 });
 
 // Custom chronik client
@@ -126,7 +142,6 @@ const customChronik = new ChronikClient('https://your-chronik-url.com');
 await quick.sendXec(recipients, { chronik: customChronik });
 await quick.sendSlp(recipients, {
   tokenId: 'token-id',
-  tokenDecimals: 2,
   chronik: customChronik
 });
 ```
@@ -155,4 +170,24 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Support
 
-[Issues](https://github.com/alitayin/quicksend/issues) | [GitHub](https://github.com/alitayin/quicksend) 
+[Issues](https://github.com/alitayin/quicksend/issues) | [GitHub](https://github.com/alitayin/quicksend)
+
+---
+
+## Changelog
+
+### v1.3.0
+- `tokenDecimals` is now optional in `sendSlp` / `sendAlp` / `send`. Token `amount` is in atoms (smallest unit), matching the ecash-wallet convention. `tokenDecimals` is accepted but ignored for backward compatibility.
+
+### v1.2.0
+- Fee verification now uses `EccDummy` (same approach as ecash-wallet) to build a dummy transaction with worst-case signature sizes before broadcasting. This guarantees the fee estimate is always a conservative upper bound — insufficient-fee broadcasts are impossible.
+
+### v1.1.0
+- **Breaking**: Library no longer calls `dotenv.config()` internally. Call it yourself in your app entry point if you use `.env` files.
+- `broadcastTx` → `broadcastTxs` (chronik-client >= 0.32.10).
+- Fee estimation replaced magic numbers with `calcTxFee` + named byte-size constants.
+- Removed duplicate `console.log` calls for key derivation and transaction summaries.
+- Merged duplicate `buildSlpOutputs` / `buildAlpOutputs` into shared `buildTokenOutputs`.
+
+### v1.0.9
+- Migrated to `broadcastTxs`, unified `TransactionResult` type, extracted XEC derivation path constant. 
