@@ -70,8 +70,8 @@ class TransactionManager {
   async send(type: TransactionType, recipients: Recipient[], options: GeneralSendOptions = {}): Promise<TransactionResult> {
     switch (type.toLowerCase() as TransactionType) {
       case 'slp':
-        if (!options.tokenId || !options.tokenDecimals) {
-          throw new Error('SLP transactions require tokenId and tokenDecimals');
+        if (!options.tokenId) {
+          throw new Error('SLP transactions require tokenId');
         }
         return await this.sendSlp(recipients, {
           tokenId: options.tokenId,
@@ -83,8 +83,8 @@ class TransactionManager {
           chronik: options.chronik // 传递chronik客户端
         });
       case 'alp':
-        if (!options.tokenId || !options.tokenDecimals) {
-          throw new Error('ALP transactions require tokenId and tokenDecimals');
+        if (!options.tokenId) {
+          throw new Error('ALP transactions require tokenId');
         }
         return await this.sendAlp(recipients, {
           tokenId: options.tokenId,

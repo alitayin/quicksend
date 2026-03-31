@@ -179,6 +179,9 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Changelog
 
+### v1.3.5
+- Fixed `send('slp', ...)` and `send('alp', ...)` incorrectly rejecting `tokenDecimals: 0`. The `!tokenDecimals` falsy check treated `0` as missing; validation now only requires `tokenId`.
+
 ### v1.3.4
 - Added `tokenId` format validation: non-64-char or non-hex values now throw a clear error at the entry point instead of a cryptic library exception.
 - `feeStrategy`, `tokenStrategy`, and `utxoStrategy` options are now typed as proper union types (`FeeStrategy`, `TokenStrategy`, `UtxoStrategy`) instead of `string`, improving type safety for callers using TypeScript.

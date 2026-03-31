@@ -482,13 +482,12 @@ describe('quick.send()', () => {
         );
     });
 
-    test('send("alp", ...) throws when tokenDecimals is missing', async () => {
+    test('send("alp", ...) succeeds without tokenDecimals (optional since v1.3.0)', async () => {
         const chronik = new FakeChronik([UTXO_ALP_125, UTXO_FEE_20K]);
-        await assert.rejects(
+        await assert.doesNotReject(
             () => quick.send('alp', [{ address: ADDR_1, amount: 100 }], {
-                ...BASE_OPTS, chronik, tokenId: TOKEN_ID_ALP,
+                ...BASE_OPTS, chronik, tokenId: TOKEN_ID_ALP, tokenStrategy: 'largest',
             }),
-            /tokenDecimals/,
         );
     });
 
