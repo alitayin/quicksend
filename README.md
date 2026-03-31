@@ -13,8 +13,11 @@ npm install ecash-quicksend
 
 ## Migration Notes
 
-### v1.1.0+
-This library no longer calls `dotenv.config()` internally. If you rely on a `.env` file for your mnemonic, call `dotenv.config()` in your own application entry point before using this library:
+### v1.3.3+
+`Recipient.amount` unit is now clearly documented: satoshis for XEC (1 XEC = 100 sats), base atoms for SLP/ALP tokens. JSDoc and example comments updated.
+
+### v1.3.2+
+This library no longer calls `dotenv.config()` internally and does not depend on `dotenv`. If you rely on a `.env` file for your mnemonic, install `dotenv` yourself and call `dotenv.config()` in your own application entry point before using this library:
 
 ```javascript
 import dotenv from 'dotenv';
@@ -50,28 +53,28 @@ dotenv.config();
 ```javascript
 import quick from 'ecash-quicksend';
 
-// Send XEC
+// Send XEC — amount in satoshis (1 XEC = 100 sats)
 await quick.sendXec([
-  { address: 'ecash:qq...', amount: 1000 } // 10.00 XEC
+  { address: 'ecash:qq...', amount: 1000 } // 1000 sats = 10.00 XEC
 ]);
 
 // Send XEC with custom mnemonic
 await quick.sendXec([
-  { address: 'ecash:qq...', amount: 1000 } // 10.00 XEC
+  { address: 'ecash:qq...', amount: 1000 } // 1000 sats = 10.00 XEC
 ], {
   mnemonic: 'your twelve word mnemonic phrase'
 });
 
-// Send SLP tokens — amount in atoms (smallest unit)
+// Send SLP tokens — amount in base atoms (smallest unit, NOT display amount)
 await quick.sendSlp([
-  { address: 'ecash:qq...', amount: 100 } // 100 atoms
+  { address: 'ecash:qq...', amount: 100 } // 100 atoms (e.g. 1.00 if tokenDecimals=2)
 ], {
   tokenId: 'your-token-id',
 });
 
-// Send ALP tokens — amount in atoms (smallest unit)
+// Send ALP tokens — amount in base atoms (smallest unit, NOT display amount)
 await quick.sendAlp([
-  { address: 'ecash:qq...', amount: 100 } // 100 atoms
+  { address: 'ecash:qq...', amount: 100 } // 100 atoms (e.g. 1.00 if tokenDecimals=2)
 ], {
   tokenId: 'your-token-id',
 });
@@ -175,6 +178,17 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ---
 
 ## Changelog
+
+### v1.3.3
+- `validateMnemonic` now validates each word against the BIP39 wordlist (via `mnemonicToSeed` try/catch), catching misspellings that previously returned `true`.
+- Coinbase UTXOs are now filtered from UTXO selection. Spending immature coinbase outputs causes node rejection; they are now silently excluded from both XEC and token fee inputs.
+- `Recipient.amount` unit semantics clarified in JSDoc and examples: satoshis for XEC (1 XEC = 100 sats), base atoms for SLP/ALP tokens.
+
+### v1.3.2
+- `Ecc` instance is now a module-level singleton in `wallet-utils.ts`, eliminating redundant initialization overhead on every `sendXec`/`sendSlp`/`sendAlp` call.
+- Removed `dotenv.config()` calls from library internals (`config/constants.ts`, `send/xecsend.ts`, `send/tokensend.ts`). The library no longer touches dotenv at all.
+- Added SLP max send outputs validation: exceeding 19 recipients per tx throws a clear error instead of building an invalid transaction.
+- Added ALP max send outputs validation: exceeding 29 recipients per tx throws a clear error.
 
 ### v1.3.0
 - `tokenDecimals` is now optional in `sendSlp` / `sendAlp` / `send`. Token `amount` is in atoms (smallest unit), matching the ecash-wallet convention. `tokenDecimals` is accepted but ignored for backward compatibility.

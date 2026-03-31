@@ -1,5 +1,5 @@
 import * as ecashLib from 'ecash-lib';
-import { decodeCashAddress } from 'ecashaddrjs';
+import { Address } from 'ecash-lib';
 import { Utxo } from '../types';
 
 const {
@@ -56,7 +56,7 @@ export function buildTransactionInputs(
  */
 export function createP2pkhScript(address: string): any {
   try {
-    const { hash } = decodeCashAddress(address);
+    const { hash } = Address.fromCashAddress(address);
     return Script.p2pkh(Buffer.from(hash, 'hex'));
   } catch (error) {
     throw new Error(`Invalid address: ${address}`);

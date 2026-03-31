@@ -1,7 +1,9 @@
-import dotenv from "dotenv";
-dotenv.config();
-
 import * as ecashLib from "ecash-lib";
+
+// SLP protocol limit: max 19 token outputs per tx (index 1–19, index 0 is OP_RETURN)
+const SLP_MAX_SEND_OUTPUTS: number = (ecashLib as any).SLP_MAX_SEND_OUTPUTS ?? 19;
+// ALP policy limit: max 29 token outputs per tx
+const ALP_POLICY_MAX_OUTPUTS = 29;
 import { getUtxos, selectSlpUtxos } from "../utxo/utxo-utils";
 import { initializeWallet } from "../wallet/wallet-utils";
 import { buildTransactionInputs, createP2pkhScript } from "../transaction/transaction-utils";
@@ -100,6 +102,14 @@ async function createTokenTransaction(
     validateRequiredParams(options, [
       { key: 'tokenId', message: 'tokenId is required' },
     ]);
+
+    // 验证接收方数量不超过协议上限
+    const maxOutputs = tokenType === 'SLP' ? SLP_MAX_SEND_OUTPUTS : ALP_POLICY_MAX_OUTPUTS;
+    if (recipients.length > maxOutputs) {
+      throw new Error(
+        `Too many recipients: ${tokenType} transactions support at most ${maxOutputs} token outputs per tx, but ${recipients.length} were provided.`
+      );
+    }
 
     const {
       tokenId,

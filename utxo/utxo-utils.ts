@@ -1,5 +1,4 @@
-import { calcTxFee, DEFAULT_FEE_SATS_PER_KB } from 'ecash-lib';
-import { decodeCashAddress } from 'ecashaddrjs';
+import { calcTxFee, DEFAULT_FEE_SATS_PER_KB, Address } from 'ecash-lib';
 import { chronik } from '../client/chronik-client';
 import { Utxo, SlpToken, Recipient } from '../types';
 import { ChronikClient } from 'chronik-client';
@@ -80,7 +79,7 @@ type UtxoStrategy = 'all' | 'minimal' | 'largest_first';
  * @returns Array of UTXOs
  */
 async function getUtxos(address: string, chronikClient?: ChronikClient): Promise<Utxo[]> {
-  const { type, hash } = decodeCashAddress(address);
+  const { type, hash } = Address.fromCashAddress(address);
   const client = chronikClient || chronik; // 使用传入的chronik客户端或默认的
   
   try {
@@ -95,6 +94,8 @@ async function getUtxos(address: string, chronikClient?: ChronikClient): Promise
       vout: utxo.outpoint.outIdx,
       value: Number(utxo.sats),
       address: address,
+      isCoinbase: utxo.isCoinbase ?? false,
+      blockHeight: utxo.blockHeight ?? -1,
       slpToken: utxo.token ? {
         tokenId: utxo.token.tokenId,
         atoms: utxo.token.atoms,
@@ -116,8 +117,8 @@ async function getUtxos(address: string, chronikClient?: ChronikClient): Promise
  * @returns 包含选择的UTXOs和相关信息
  */
 function selectUtxos(utxos: Utxo[], sendAmount: number, strategy: UtxoStrategy = 'all'): UtxoSelection {
-  // 过滤掉SLP代币UTXOs
-  const nonSlpUtxos = utxos.filter(utxo => !utxo.slpToken);
+  // 过滤掉SLP代币UTXOs和coinbase UTXOs（coinbase需要100个区块成熟才能花费）
+  const nonSlpUtxos = utxos.filter(utxo => !utxo.slpToken && !utxo.isCoinbase);
   
   if (nonSlpUtxos.length === 0) {
     throw new Error('No non-SLP UTXOs available');
@@ -205,7 +206,8 @@ function selectSlpUtxos(
     utxo.slpToken.tokenId === tokenId &&
     !utxo.slpToken.isMintBaton // never spend mint batons as regular send inputs
   );
-  const nonSlpUtxos = utxos.filter(utxo => !utxo.slpToken);
+  // 过滤掉coinbase UTXOs作为手续费输入（coinbase需100个区块成熟才能花费）
+  const nonSlpUtxos = utxos.filter(utxo => !utxo.slpToken && !utxo.isCoinbase);
 
   if (slpUtxos.length === 0) {
     throw new Error(`No SLP UTXOs available for token ${tokenId}`);

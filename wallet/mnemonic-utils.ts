@@ -1,6 +1,5 @@
-import { mnemonicToSeed, HdNode, shaRmd160 } from 'ecash-lib';
+import { mnemonicToSeed, HdNode, shaRmd160, Address } from 'ecash-lib';
 import * as wif from 'wif';
-import { encodeCashAddress } from 'ecashaddrjs';
 
 // 派生密钥结果接口
 interface DerivedKey {
@@ -37,7 +36,7 @@ export function deriveBuyerKey(
   // 获取公钥并创建 eCash 地址
   const pubkey = childNode.pubkey();
   const pubkeyHash = shaRmd160(pubkey);
-  const ecashAddress = encodeCashAddress('ecash', 'p2pkh', pubkeyHash);
+  const ecashAddress = Address.p2pkh(pubkeyHash).toString();
   
   // 提取私钥缓冲区
   const privateKeyBuffer = childNode.seckey();
@@ -66,8 +65,16 @@ export function validateMnemonic(mnemonic: string | null | undefined): boolean {
   if (!mnemonic || typeof mnemonic !== 'string') {
     return false;
   }
-  
+
   const words = mnemonic.trim().split(/\s+/);
-  // 助记词通常是12, 15, 18, 21, 24个单词
-  return [12, 15, 18, 21, 24].includes(words.length);
+  if (![12, 15, 18, 21, 24].includes(words.length)) {
+    return false;
+  }
+
+  try {
+    mnemonicToSeed(mnemonic.trim());
+    return true;
+  } catch {
+    return false;
+  }
 } 

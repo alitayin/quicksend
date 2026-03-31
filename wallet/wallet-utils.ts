@@ -10,6 +10,9 @@ const {
   shaRmd160,
 } = ecashLib;
 
+// 模块级单例，避免每次调用都重新初始化 Ecc
+const ecc = new Ecc();
+
 // 钱包信息接口
 interface WalletInfo {
   ecc: any;
@@ -32,13 +35,12 @@ export function initializeWallet(addressIndex: number = 0, mnemonic?: string): W
   const finalMnemonic = mnemonic || getMnemonic();
   
   if (!finalMnemonic) {
-    throw new Error('助记词未设置：请在环境变量中设置 MNEMONIC 或在函数调用中提供助记词参数');
+    throw new Error('Mnemonic not set: please set the MNEMONIC environment variable or provide it as a parameter');
   }
   
   // 只调用一次 deriveBuyerKey，获取完整信息
   const derived = deriveBuyerKey(finalMnemonic, addressIndex);
   
-  const ecc = new Ecc();
   const decoded = wif.decode(derived.wif);
   const privateKey = decoded.privateKey;
   const privateKeyHex = Buffer.from(privateKey).toString('hex');

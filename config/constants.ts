@@ -1,6 +1,4 @@
-import dotenv from 'dotenv';
 import { deriveBuyerKey } from '../wallet/mnemonic-utils';
-dotenv.config();
 
 /**
  * 应用程序配置常量
@@ -15,7 +13,7 @@ export const CONFIG = {
  */
 export function validateConfig(): void {
   if (!CONFIG.MNEMONIC) {
-    throw new Error('必须设置 MNEMONIC 环境变量');
+    throw new Error('MNEMONIC environment variable must be set');
   }
 }
 
@@ -38,7 +36,7 @@ export function getMnemonic(): string | null {
 export function getPrivateKeyWIF(addressIndex: number = 0, mnemonic?: string): string {
   const finalMnemonic = mnemonic || getMnemonic();
   if (!finalMnemonic) {
-    throw new Error('助记词未设置：请在环境变量中设置 MNEMONIC 或在代码中提供助记词参数');
+    throw new Error('Mnemonic not set: please set the MNEMONIC environment variable or provide it as a parameter');
   }
   const derived = deriveBuyerKey(finalMnemonic, addressIndex);
   return derived.wif;
@@ -52,7 +50,7 @@ export function getPrivateKeyWIF(addressIndex: number = 0, mnemonic?: string): s
 export function getDefaultUtxoAddress(addressIndex: number = 0, mnemonic?: string): string {
   const finalMnemonic = mnemonic || getMnemonic();
   if (!finalMnemonic) {
-    throw new Error('助记词未设置：请在环境变量中设置 MNEMONIC 或在代码中提供助记词参数');
+    throw new Error('Mnemonic not set: please set the MNEMONIC environment variable or provide it as a parameter');
   }
   const derived = deriveBuyerKey(finalMnemonic, addressIndex);
   return derived.address;

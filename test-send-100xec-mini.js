@@ -4,6 +4,8 @@ import quick from './dist/index.js';  // 改成 dist/index.js
 const recipients = [
   {
     address: 'ecash:qr6lws9uwmjkkaau4w956lugs9nlg9hudqs26lyxkv',
+    address: 'ecash:qr6lws9uwmjkkaau4w956lugs9nlg9hudqs26lyxkv',
+    address: 'ecash:qr6lws9uwmjkkaau4w956lugs9nlg9hudqs26lyxkv',
     amount: 10000 
   }
 ];

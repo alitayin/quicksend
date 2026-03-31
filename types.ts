@@ -5,9 +5,15 @@ import { ChronikClient } from "chronik-client";
 
 /**
  * 交易接收方
+ *
+ * @property address - eCash address (ecash:qq...)
+ * @property amount - Unit depends on transaction type:
+ *   - XEC: satoshis (1 XEC = 100 sats, e.g. amount: 1000 = 10.00 XEC)
+ *   - SLP/ALP token: base atoms (smallest unit; combine with tokenDecimals to get display amount)
  */
 export interface Recipient {
   address: string;
+  /** XEC: satoshis (1 XEC = 100 sats) | Token: base atoms (smallest unit) */
   amount: number;
 }
 
@@ -20,6 +26,8 @@ export interface Utxo {
   value: number;
   address?: string;
   slpToken?: SlpToken;
+  isCoinbase?: boolean;
+  blockHeight?: number;
   [key: string]: any; // 允许其他属性
 }
 
