@@ -2,7 +2,7 @@ import { getUtxos, selectUtxos } from '../utxo/utxo-utils';
 import { initializeWallet } from '../wallet/wallet-utils';
 import { buildTransactionInputs, createP2pkhScript } from '../transaction/transaction-utils';
 import { buildAndBroadcastTransaction, verifyFee } from '../transaction/transaction-builder';
-import { TransactionResult } from '../types';
+import { TransactionResult, UtxoStrategy } from '../types';
 
 // 扩展的接收方接口，支持代币交易
 interface ExtendedRecipient {
@@ -29,7 +29,7 @@ interface XecTransactionResult extends TransactionResult {
 
 export async function createRawXecTransaction(
   recipients: ExtendedRecipient[], 
-  utxoStrategy: string = 'all', 
+  utxoStrategy: UtxoStrategy = 'all',
   addressIndex: number = 0,
   mnemonic?: string, // 可选的助记词参数
   chronikClient?: any // 新增：可选的chronik客户端参数 (使用any类型以避免循环依赖)
@@ -75,7 +75,7 @@ export async function createRawXecTransaction(
     const tokenRecipients: ExtendedRecipient[] = recipients.filter(r => r.tokenId);
 
     // 选择UTXOs
-    const utxoSelection = selectUtxos(utxos, totalSendAmount, utxoStrategy as any);
+    const utxoSelection = selectUtxos(utxos, totalSendAmount, utxoStrategy);
     const { selectedUtxos } = utxoSelection;
 
     // 记录交易摘要

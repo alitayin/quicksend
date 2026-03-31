@@ -12,7 +12,7 @@ import {
   validateRequiredParams,
   verifyFee
 } from "../transaction/transaction-builder";
-import { Recipient, TokenTransactionOptions, TransactionResult } from "../types";
+import { Recipient, TokenTransactionOptions, TransactionResult, FeeStrategy, TokenStrategy } from "../types";
 
 const { 
   Script, 
@@ -121,6 +121,10 @@ async function createTokenTransaction(
       chronik: chronikClient // 新增：从选项中提取chronik客户端
     } = options;
 
+    if (!/^[0-9a-f]{64}$/.test(tokenId)) {
+      throw new Error(`Invalid tokenId: must be a 64-character lowercase hex string, got "${tokenId}"`);
+    }
+
     // 初始化钱包 - 使用指定的地址索引和可选的助记词
     const { walletSk, walletPk, walletP2pkh, address: utxoAddress } = initializeWallet(addressIndex, mnemonic);
     
@@ -131,8 +135,8 @@ async function createTokenTransaction(
 
     // 选择代币UTXOs
     const tokenSelection = selectSlpUtxos(utxos, tokenId, recipients, tokenDecimals, {
-      feeStrategy: feeStrategy as any,
-      tokenStrategy: tokenStrategy as any
+      feeStrategy,
+      tokenStrategy
     });
 
     const {

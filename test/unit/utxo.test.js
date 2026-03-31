@@ -132,6 +132,22 @@ describe('selectUtxos', () => {
             /No non-SLP UTXOs available/,
         );
     });
+
+    test('coinbase UTXOs are excluded from selection', () => {
+        const coinbaseUtxo = { ...makeInternalXecUtxo({ txidByte: 'cb', value: 500_000 }), isCoinbase: true };
+        // Only the coinbase UTXO — should throw as if no UTXOs available
+        assert.throws(
+            () => selectUtxos([coinbaseUtxo], 1_000, 'all'),
+            /No non-SLP UTXOs available/,
+        );
+    });
+
+    test('coinbase UTXOs are excluded but non-coinbase UTXOs are still used', () => {
+        const coinbaseUtxo = { ...makeInternalXecUtxo({ txidByte: 'cb', value: 500_000 }), isCoinbase: true };
+        const result = selectUtxos([coinbaseUtxo, INT_XEC_100K], 1_000, 'all');
+        assert.equal(result.selectedUtxos.length, 1);
+        assert.equal(result.selectedUtxos[0].value, 100_000);
+    });
 });
 
 // ---------------------------------------------------------------------------

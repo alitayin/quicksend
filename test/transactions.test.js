@@ -292,6 +292,39 @@ describe('sendSlp', () => {
             ),
         );
     });
+
+    test('mint baton UTXO is excluded: does not appear as a tx input', async () => {
+        // UTXO_SLP_MINTBATON has isMintBaton=true and must never be spent
+        const chronik = new FakeChronik([UTXO_SLP_MINTBATON, UTXO_SLP_150, UTXO_FEE_20K]);
+        await sendSlp(
+            [{ address: ADDR_1, amount: 100 }],
+            { ...slpOpts, chronik, tokenStrategy: 'largest' },
+        );
+
+        const tx = parseTx(chronik.broadcasted[0]);
+        // Only UTXO_SLP_150 + UTXO_FEE_20K should be inputs (2 total), not the mint baton
+        assert.equal(tx.inputs.length, 2, 'mint baton must not be included as input');
+    });
+
+    test('throws when too many recipients exceed SLP limit (>19)', async () => {
+        const chronik = new FakeChronik([UTXO_SLP_150, UTXO_FEE_20K]);
+        const tooMany = Array.from({ length: 20 }, () => ({ address: ADDR_1, amount: 1 }));
+        await assert.rejects(
+            () => sendSlp(tooMany, { ...slpOpts, chronik }),
+            /Too many recipients/,
+        );
+    });
+
+    test('throws when tokenId is not a valid 64-char hex string', async () => {
+        const chronik = new FakeChronik([UTXO_SLP_150, UTXO_FEE_20K]);
+        await assert.rejects(
+            () => sendSlp(
+                [{ address: ADDR_1, amount: 100 }],
+                { ...slpOpts, tokenId: 'not-a-valid-tokenid', chronik },
+            ),
+            /Invalid tokenId/,
+        );
+    });
 });
 
 // ---------------------------------------------------------------------------

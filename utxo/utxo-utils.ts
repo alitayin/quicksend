@@ -1,6 +1,6 @@
 import { calcTxFee, DEFAULT_FEE_SATS_PER_KB, Address } from 'ecash-lib';
 import { chronik } from '../client/chronik-client';
-import { Utxo, SlpToken, Recipient } from '../types';
+import { Utxo, SlpToken, Recipient, UtxoStrategy, FeeStrategy, TokenStrategy } from '../types';
 import { ChronikClient } from 'chronik-client';
 
 // P2PKH 交易字节大小常量
@@ -26,8 +26,8 @@ interface UtxoSelection {
 // SLP UTXO选择选项接口
 interface SlpUtxoOptions {
   dustLimit?: number;
-  feeStrategy?: 'all' | 'minimal' | 'largest_first';
-  tokenStrategy?: 'largest' | 'minimal' | 'all';
+  feeStrategy?: FeeStrategy;
+  tokenStrategy?: TokenStrategy;
 }
 
 // SLP UTXO选择结果接口
@@ -69,8 +69,7 @@ interface AddressBalance {
   tokenBalances: TokenBalance[];
 }
 
-// UTXO选择策略类型
-type UtxoStrategy = 'all' | 'minimal' | 'largest_first';
+// UtxoStrategy 从 types.ts 导入
 
 /**
  * Get UTXOs for a given address

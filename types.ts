@@ -61,8 +61,8 @@ export interface TokenTransactionOptions {
   tokenId: string;
   tokenDecimals?: number; // 可选，向后兼容；amount 直接以 atoms（最小单位）表示
   addressIndex?: number;
-  feeStrategy?: string;
-  tokenStrategy?: string;
+  feeStrategy?: FeeStrategy;
+  tokenStrategy?: TokenStrategy;
   mnemonic?: string; // 可选：如果提供则使用，否则从环境变量读取
   chronik?: ChronikClient; // 新增：可选的chronik实例
 }
@@ -71,7 +71,7 @@ export interface TokenTransactionOptions {
  * XEC 交易选项（可以是字符串或对象）
  */
 export interface XecTransactionOptions {
-  utxoStrategy?: string;
+  utxoStrategy?: UtxoStrategy;
   addressIndex?: number;
   mnemonic?: string; // 可选：如果提供则使用，否则从环境变量读取
   chronik?: ChronikClient; // 新增：可选的chronik实例
@@ -86,12 +86,12 @@ export type XecOptions = string | XecTransactionOptions;
  * 通用发送方法的选项
  */
 export interface GeneralSendOptions {
-  utxoStrategy?: string;
+  utxoStrategy?: UtxoStrategy;
   addressIndex?: number;
   tokenId?: string;
   tokenDecimals?: number;
-  feeStrategy?: string;
-  tokenStrategy?: string;
+  feeStrategy?: FeeStrategy;
+  tokenStrategy?: TokenStrategy;
   mnemonic?: string; // 可选：如果提供则使用，否则从环境变量读取
   chronik?: ChronikClient; // 新增：可选的chronik实例
 }
@@ -102,6 +102,16 @@ export interface GeneralSendOptions {
 export type TransactionType = 'slp' | 'alp' | 'xec';
 
 /**
- * UTXO策略类型
+ * UTXO选择策略类型
  */
-export type UtxoStrategy = 'all' | 'single' | 'multiple'; 
+export type UtxoStrategy = 'all' | 'minimal' | 'largest_first';
+
+/**
+ * 手续费UTXO选择策略类型
+ */
+export type FeeStrategy = 'all' | 'minimal' | 'largest_first';
+
+/**
+ * 代币UTXO选择策略类型
+ */
+export type TokenStrategy = 'largest' | 'minimal' | 'all';

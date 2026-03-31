@@ -179,6 +179,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Changelog
 
+### v1.3.4
+- Added `tokenId` format validation: non-64-char or non-hex values now throw a clear error at the entry point instead of a cryptic library exception.
+- `feeStrategy`, `tokenStrategy`, and `utxoStrategy` options are now typed as proper union types (`FeeStrategy`, `TokenStrategy`, `UtxoStrategy`) instead of `string`, improving type safety for callers using TypeScript.
+
 ### v1.3.3
 - `validateMnemonic` now validates each word against the BIP39 wordlist (via `mnemonicToSeed` try/catch), catching misspellings that previously returned `true`.
 - Coinbase UTXOs are now filtered from UTXO selection. Spending immature coinbase outputs causes node rejection; they are now silently excluded from both XEC and token fee inputs.

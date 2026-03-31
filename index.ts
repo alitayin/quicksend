@@ -7,7 +7,8 @@ import {
   XecOptions, 
   XecTransactionOptions,
   GeneralSendOptions,
-  TransactionType 
+  TransactionType,
+  UtxoStrategy
 } from './types';
 
 /**
@@ -40,7 +41,7 @@ class TransactionManager {
    */
   async sendXec(recipients: Recipient[], options: XecOptions = 'all'): Promise<TransactionResult> {
     // 如果options是对象，提取相关参数；否则直接使用options作为策略
-    let utxoStrategy: string;
+    let utxoStrategy: UtxoStrategy;
     let addressIndex: number;
     let mnemonic: string | undefined;
     let chronikClient: any | undefined; // 新增：chronik客户端
@@ -51,7 +52,7 @@ class TransactionManager {
       mnemonic = (options as XecTransactionOptions).mnemonic;
       chronikClient = (options as XecTransactionOptions).chronik; // 提取chronik客户端
     } else {
-      utxoStrategy = options as string;
+      utxoStrategy = options as UtxoStrategy;
       addressIndex = 0;
       mnemonic = undefined;
       chronikClient = undefined;
