@@ -1,7 +1,47 @@
 import { chronik } from "../client/chronik-client";
-import { TxBuilder, toHex } from "ecash-lib";
+import {
+  TxBuilder, toHex, EccDummy, P2PKHSignatory, ALL_BIP143,
+  DEFAULT_DUST_SATS, DEFAULT_FEE_SATS_PER_KB, fromHex, Script
+} from "ecash-lib";
 import { ChronikClient } from "chronik-client";
 import { TransactionResult } from "../types";
+
+// EccDummy 使用固定最大签名长度（73字节），保证费用估算永远不低于实际
+const _eccDummy = new EccDummy();
+const _DUMMY_SK = fromHex('1122334455667788990011223344556677889900112233445566778899001122');
+const _DUMMY_PK = _eccDummy.derivePubkey(_DUMMY_SK);
+const _DUMMY_P2PKH = Script.p2pkh(new Uint8Array(20).fill(0x11));
+
+/**
+ * 用 EccDummy 验证 UTXOs 能否覆盖 outputs + 真实手续费。
+ * EccDummy 签名长度固定为最大值（73字节），结果是保守上界，永远不低估。
+ * 如果验证失败，在广播前提前抛出，避免浪费网络请求。
+ */
+export function verifyFee(
+  utxos: Array<{ value: number }>,
+  outputs: any[],
+  feePerKb: bigint = DEFAULT_FEE_SATS_PER_KB,
+  dustSats: bigint = DEFAULT_DUST_SATS,
+): void {
+  const dummyInputs = utxos.map((utxo, i) => ({
+    input: {
+      prevOut: { txid: '00'.repeat(32), outIdx: i },
+      signData: { sats: BigInt(utxo.value), outputScript: _DUMMY_P2PKH },
+    },
+    signatory: P2PKHSignatory(_DUMMY_SK, _DUMMY_PK, ALL_BIP143),
+  }));
+
+  try {
+    const txBuilder = new TxBuilder({ inputs: dummyInputs, outputs });
+    txBuilder.sign({ ecc: _eccDummy, feePerKb, dustSats });
+  } catch (e) {
+    throw new Error(
+      `Insufficient balance to cover outputs and fee: ${
+        e instanceof Error ? e.message : String(e)
+      }`
+    );
+  }
+}
 
 // 交易选项接口
 interface TransactionOptions {
@@ -89,5 +129,5 @@ export function validateRequiredParams(params: any, required: RequiredParamConfi
  * @param summary - 摘要信息
  */
 export function logTransactionSummary(type: string, summary: any): void {
-  console.log(`${type}交易摘要:`, summary);
+  console.log(`${type} transaction summary:`, summary);
 } 

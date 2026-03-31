@@ -93,7 +93,7 @@ describe('selectUtxos', () => {
         const utxos = [INT_SLP_150, INT_SLP_80];
         assert.throws(
             () => selectUtxos(utxos, 1_000, 'all'),
-            /没有可用的非SLP UTXOs/,
+            /No non-SLP UTXOs available/,
         );
     });
 
@@ -101,7 +101,7 @@ describe('selectUtxos', () => {
         const utxos = [makeInternalXecUtxo({ txidByte: 'b1', value: 100 })];
         assert.throws(
             () => selectUtxos(utxos, 50_000, 'all'),
-            /余额不足/,
+            /Insufficient balance/,
         );
     });
 
@@ -114,7 +114,7 @@ describe('selectUtxos', () => {
             caught = e;
         }
         assert.ok(caught, 'should have thrown');
-        assert.ok(caught.message.includes('余额不足'), `message: ${caught.message}`);
+        assert.ok(caught.message.includes('Insufficient balance'), `message: ${caught.message}`);
         assert.ok(caught.message.includes('500'), `message should contain totalInput: ${caught.message}`);
     });
 
@@ -122,14 +122,14 @@ describe('selectUtxos', () => {
         const utxos = [INT_XEC_100K];
         assert.throws(
             () => selectUtxos(utxos, 1_000, 'super_optimal'),
-            /未知的UTXO选择策略/,
+            /Unknown UTXO selection strategy/,
         );
     });
 
     test('empty UTXO array treated the same as all-token (throws)', () => {
         assert.throws(
             () => selectUtxos([], 1_000, 'all'),
-            /没有可用的非SLP UTXOs/,
+            /No non-SLP UTXOs available/,
         );
     });
 });
@@ -239,7 +239,7 @@ describe('selectSlpUtxos', () => {
         ];
         assert.throws(
             () => selectSlpUtxos(utxos, TOKEN_ID_SLP, recipient100, 0),
-            new RegExp(`没有可用的 ${TOKEN_ID_SLP} SLP UTXOs`),
+            new RegExp(`No SLP UTXOs available for token ${TOKEN_ID_SLP}`),
         );
     });
 
@@ -247,7 +247,7 @@ describe('selectSlpUtxos', () => {
         const utxos = [INT_SLP_150]; // no XEC utxo
         assert.throws(
             () => selectSlpUtxos(utxos, TOKEN_ID_SLP, recipient100, 0),
-            /没有可用的非SLP UTXOs用于支付手续费/,
+            /No non-SLP UTXOs available for fee payment/,
         );
     });
 
@@ -258,7 +258,7 @@ describe('selectSlpUtxos', () => {
             () => selectSlpUtxos(utxos, TOKEN_ID_SLP, recipient100, 0, {
                 tokenStrategy: 'largest',
             }),
-            /代币余额不足/,
+            /Insufficient token balance/,
         );
     });
 
@@ -273,7 +273,7 @@ describe('selectSlpUtxos', () => {
             () => selectSlpUtxos(utxos, TOKEN_ID_SLP, recipient100, 0, {
                 tokenStrategy: 'minimal',
             }),
-            /没有足够的代币余额/,
+            /Insufficient token balance/,
         );
     });
 
@@ -288,7 +288,7 @@ describe('selectSlpUtxos', () => {
                 tokenStrategy: 'largest',
                 feeStrategy: 'all',
             }),
-            /手续费余额不足/,
+            /Insufficient balance for fees/,
         );
     });
 

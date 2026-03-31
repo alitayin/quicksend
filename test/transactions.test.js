@@ -151,7 +151,7 @@ describe('sendXec', () => {
         const chronik  = new FakeChronik([tinyUtxo]);
         await assert.rejects(
             () => sendXec([{ address: ADDR_1, amount: 50_000 }], { ...BASE_OPTS, chronik }),
-            /余额不足/,
+            /Insufficient balance/,
         );
     });
 });
@@ -268,7 +268,7 @@ describe('sendSlp', () => {
                 [{ address: ADDR_1, amount: 100 }],
                 { ...slpOpts, chronik, tokenStrategy: 'largest' },
             ),
-            /代币余额不足/,
+            /Insufficient token balance/,
         );
     });
 
@@ -362,7 +362,7 @@ describe('sendAlp', () => {
                 [{ address: ADDR_1, amount: 100 }],
                 { ...alpOpts, chronik, tokenStrategy: 'largest' },
             ),
-            /代币余额不足/,
+            /Insufficient token balance/,
         );
     });
 });

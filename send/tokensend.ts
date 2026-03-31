@@ -7,7 +7,8 @@ import { initializeWallet } from "../wallet/wallet-utils";
 import { buildTransactionInputs, createP2pkhScript } from "../transaction/transaction-utils";
 import {
   buildAndBroadcastTransaction,
-  validateRequiredParams
+  validateRequiredParams,
+  verifyFee
 } from "../transaction/transaction-builder";
 import { Recipient, TokenTransactionOptions, TransactionResult } from "../types";
 
@@ -144,8 +145,11 @@ async function createTokenTransaction(
       outputs = buildSlpOutputs(tokenId, finalSendAmounts, recipients, tokenChange, dustLimit, walletP2pkh);
     }
 
+    // 用 EccDummy 验证输入能覆盖输出 + 真实手续费（保守上界）
+    verifyFee([...selectedTokenUtxos, ...selectedFeeUtxos], outputs);
+
     // 构建并广播交易
-    return await buildAndBroadcastTransaction(inputs, outputs, { dustLimit, chronik: chronikClient }); // 传递chronik客户端
+    return await buildAndBroadcastTransaction(inputs, outputs, { dustLimit, chronik: chronikClient });
 
   } catch (error) {
     console.error(`${tokenType} transaction creation failed:`, error);

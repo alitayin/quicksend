@@ -4,7 +4,7 @@ dotenv.config();
 import { getUtxos, selectUtxos } from '../utxo/utxo-utils';
 import { initializeWallet } from '../wallet/wallet-utils';
 import { buildTransactionInputs, createP2pkhScript } from '../transaction/transaction-utils';
-import { buildAndBroadcastTransaction } from '../transaction/transaction-builder';
+import { buildAndBroadcastTransaction, verifyFee } from '../transaction/transaction-builder';
 import { TransactionResult } from '../types';
 
 // 扩展的接收方接口，支持代币交易
@@ -108,6 +108,9 @@ export async function createRawXecTransaction(
     
     // 添加找零脚本 - 保持原始逻辑！
     outputs.push(walletP2pkh);
+
+    // 用 EccDummy 验证输入能覆盖输出 + 真实手续费（保守上界）
+    verifyFee(selectedUtxos, outputs);
 
     // 构建并广播交易
     const result = await buildAndBroadcastTransaction(inputs, outputs, { chronik: chronikClient }); // 传递chronik客户端
