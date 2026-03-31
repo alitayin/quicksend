@@ -65,6 +65,17 @@ class FakeChronik {
         this.broadcasted.push(rawTxHex);
         return { txid: computeTxid(rawTxHex) };
     }
+
+    async broadcastTxs(rawTxHexes) {
+        if (this._errorOnBroadcast) {
+            throw this._errorOnBroadcast;
+        }
+        const txids = rawTxHexes.map(hex => {
+            this.broadcasted.push(hex);
+            return computeTxid(hex);
+        });
+        return { txids };
+    }
 }
 
 // ---------------------------------------------------------------------------

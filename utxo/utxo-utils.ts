@@ -1,7 +1,19 @@
+import { calcTxFee, DEFAULT_FEE_SATS_PER_KB } from 'ecash-lib';
 import { decodeCashAddress } from 'ecashaddrjs';
 import { chronik } from '../client/chronik-client';
 import { Utxo, SlpToken, Recipient } from '../types';
 import { ChronikClient } from 'chronik-client';
+
+// P2PKH 交易字节大小常量
+const P2PKH_INPUT_BYTES = 148;  // txid(32) + vout(4) + scriptLen(1) + sig(72) + pubkey(33) + sequence(4) + varint(2)
+const P2PKH_OUTPUT_BYTES = 34; // value(8) + scriptLen(1) + script(25)
+const TX_OVERHEAD_BYTES = 10;  // version(4) + locktime(4) + input/output count varints
+
+/** 根据输入数和输出数估算交易手续费（satoshis） */
+function estimateFee(nInputs: number, nOutputs: number): number {
+  const txBytes = nInputs * P2PKH_INPUT_BYTES + nOutputs * P2PKH_OUTPUT_BYTES + TX_OVERHEAD_BYTES;
+  return Number(calcTxFee(txBytes, DEFAULT_FEE_SATS_PER_KB));
+}
 
 // UTXO选择结果接口
 interface UtxoSelection {
@@ -124,8 +136,8 @@ function selectUtxos(utxos: Utxo[], sendAmount: number, strategy: UtxoStrategy =
         selectedUtxos.push(utxo);
         accumulatedValue += utxo.value;
         
-        // 粗略估算手续费（每个输入约150 sats + 基础费用250 sats）
-        const estimatedFee = selectedUtxos.length * 150 + 250;
+        // 估算手续费：inputs + 2 outputs（接收方 + 找零）
+        const estimatedFee = estimateFee(selectedUtxos.length, 2);
         
         if (accumulatedValue >= sendAmount + estimatedFee) {
           break;
@@ -143,7 +155,7 @@ function selectUtxos(utxos: Utxo[], sendAmount: number, strategy: UtxoStrategy =
   }
 
   const totalInputValue = selectedUtxos.reduce((sum, utxo) => sum + utxo.value, 0);
-  const estimatedFee = selectedUtxos.length * 150 + 250;
+  const estimatedFee = estimateFee(selectedUtxos.length, 2);
   
   // 检查余额是否足够
   if (totalInputValue < sendAmount + estimatedFee) {
@@ -252,7 +264,9 @@ function selectSlpUtxos(
   }
 
   const totalFeeInputValue = selectedFeeUtxos.reduce((sum, utxo) => sum + utxo.value, 0);
-  const estimatedFee = (selectedFeeUtxos.length + selectedTokenUtxos.length) * 150 + 50; // 更新手续费计算
+  // 估算手续费：所有输入 + OP_RETURN(1) + 接收方输出 + token找零(1) + XEC找零(1)
+  const nOutputs = 1 + recipients.length + (tokenChange > 0n ? 1 : 0) + 1;
+  const estimatedFee = estimateFee(selectedFeeUtxos.length + selectedTokenUtxos.length, nOutputs);
 
   // 计算所需的最小金额
   const requiredAmount = recipients.length * dustLimit + (tokenChange > 0n ? dustLimit : 0) + estimatedFee;
