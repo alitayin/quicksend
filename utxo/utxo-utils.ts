@@ -103,8 +103,7 @@ async function getUtxos(address: string, chronikClient?: ChronikClient): Promise
     }));
     return utxos;
   } catch (err) {
-    console.log(`Error fetching UTXOs for hash160: ${hash}`);
-    return [];
+    throw new Error(`Failed to fetch UTXOs for ${address}: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
@@ -133,7 +132,7 @@ function selectUtxos(utxos: Utxo[], sendAmount: number, strategy: UtxoStrategy =
       
     case 'minimal':
       // 选择最少数量的UTXOs来满足金额需求
-      const sortedUtxos = nonSlpUtxos.sort((a, b) => b.value - a.value); // 从大到小排序
+      const sortedUtxos = [...nonSlpUtxos].sort((a, b) => b.value - a.value); // 从大到小排序
       let accumulatedValue = 0;
       
       for (const utxo of sortedUtxos) {
@@ -151,7 +150,7 @@ function selectUtxos(utxos: Utxo[], sendAmount: number, strategy: UtxoStrategy =
       
     case 'largest_first':
       // 优先选择最大的UTXOs
-      selectedUtxos = nonSlpUtxos.sort((a, b) => b.value - a.value);
+      selectedUtxos = [...nonSlpUtxos].sort((a, b) => b.value - a.value);
       break;
       
     default:

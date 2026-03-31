@@ -40,7 +40,10 @@ export function deriveBuyerKey(
   
   // 提取私钥缓冲区
   const privateKeyBuffer = childNode.seckey();
-  
+  if (!privateKeyBuffer) {
+    throw new Error('Failed to derive private key: seckey() returned undefined');
+  }
+
   // 将私钥转换为 WIF (0x80 是比特币主网的前缀)
   const buyerWIF = wif.encode({
     version: 0x80,

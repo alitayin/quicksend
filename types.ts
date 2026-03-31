@@ -28,7 +28,6 @@ export interface Utxo {
   slpToken?: SlpToken;
   isCoinbase?: boolean;
   blockHeight?: number;
-  [key: string]: any; // 允许其他属性
 }
 
 /**
@@ -38,7 +37,6 @@ export interface SlpToken {
   tokenId: string;
   atoms: string | bigint;
   isMintBaton: boolean; // Mint baton UTXOs must never be spent as regular send inputs
-  [key: string]: any;
 }
 
 /**
@@ -49,9 +47,6 @@ export interface TransactionResult {
   explorerLink?: string;
   broadcastResult?: string;
   fee?: number;
-  inputs?: any[];
-  outputs?: any[];
-  [key: string]: any; // 允许其他属性
 }
 
 /**
@@ -76,11 +71,6 @@ export interface XecTransactionOptions {
   mnemonic?: string; // 可选：如果提供则使用，否则从环境变量读取
   chronik?: ChronikClient; // 新增：可选的chronik实例
 }
-
-/**
- * XEC 交易选项联合类型
- */
-export type XecOptions = string | XecTransactionOptions;
 
 /**
  * 通用发送方法的选项

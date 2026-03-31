@@ -3,6 +3,7 @@ import { initializeWallet } from '../wallet/wallet-utils';
 import { buildTransactionInputs, createP2pkhScript } from '../transaction/transaction-utils';
 import { buildAndBroadcastTransaction, verifyFee } from '../transaction/transaction-builder';
 import { TransactionResult, UtxoStrategy } from '../types';
+import { ChronikClient } from 'chronik-client';
 
 // 扩展的接收方接口，支持代币交易
 interface ExtendedRecipient {
@@ -32,7 +33,7 @@ export async function createRawXecTransaction(
   utxoStrategy: UtxoStrategy = 'all',
   addressIndex: number = 0,
   mnemonic?: string, // 可选的助记词参数
-  chronikClient?: any // 新增：可选的chronik客户端参数 (使用any类型以避免循环依赖)
+  chronikClient?: ChronikClient
 ): Promise<XecTransactionResult> {
   try {
     // 验证参数

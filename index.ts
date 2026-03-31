@@ -1,14 +1,12 @@
 import { createRawSlpTransaction, createRawAlpTransaction } from './send/tokensend';
 import { createRawXecTransaction } from './send/xecsend';
-import { 
-  Recipient, 
-  TransactionResult, 
-  TokenTransactionOptions, 
-  XecOptions, 
+import {
+  Recipient,
+  TransactionResult,
+  TokenTransactionOptions,
   XecTransactionOptions,
   GeneralSendOptions,
   TransactionType,
-  UtxoStrategy
 } from './types';
 
 /**
@@ -39,25 +37,8 @@ class TransactionManager {
    * @param recipients - 接收方数组
    * @param options - UTXO选择策略字符串或包含utxoStrategy、addressIndex、mnemonic和chronik的选项对象
    */
-  async sendXec(recipients: Recipient[], options: XecOptions = 'all'): Promise<TransactionResult> {
-    // 如果options是对象，提取相关参数；否则直接使用options作为策略
-    let utxoStrategy: UtxoStrategy;
-    let addressIndex: number;
-    let mnemonic: string | undefined;
-    let chronikClient: any | undefined; // 新增：chronik客户端
-    
-    if (typeof options === 'object' && options !== null) {
-      utxoStrategy = (options as XecTransactionOptions).utxoStrategy || 'all';
-      addressIndex = (options as XecTransactionOptions).addressIndex || 0;
-      mnemonic = (options as XecTransactionOptions).mnemonic;
-      chronikClient = (options as XecTransactionOptions).chronik; // 提取chronik客户端
-    } else {
-      utxoStrategy = options as UtxoStrategy;
-      addressIndex = 0;
-      mnemonic = undefined;
-      chronikClient = undefined;
-    }
-    
+  async sendXec(recipients: Recipient[], options: XecTransactionOptions = {}): Promise<TransactionResult> {
+    const { utxoStrategy = 'all', addressIndex = 0, mnemonic, chronik: chronikClient } = options;
     return await createRawXecTransaction(recipients, utxoStrategy, addressIndex, mnemonic, chronikClient);
   }
 

@@ -1,12 +1,5 @@
-import * as ecashLib from 'ecash-lib';
-import { Address } from 'ecash-lib';
+import { Address, Script, P2PKHSignatory, ALL_BIP143 } from 'ecash-lib';
 import { Utxo } from '../types';
-
-const {
-  P2PKHSignatory,
-  ALL_BIP143,
-  Script,
-} = ecashLib;
 
 // 交易输入接口
 interface TransactionInput {
@@ -17,10 +10,10 @@ interface TransactionInput {
     };
     signData: {
       sats: bigint;
-      outputScript: any;
+      outputScript: Script;
     };
   };
-  signatory: any;
+  signatory: ReturnType<typeof P2PKHSignatory>;
 }
 
 /**
@@ -32,9 +25,9 @@ interface TransactionInput {
  * @returns 交易输入数组
  */
 export function buildTransactionInputs(
-  utxos: Utxo[] | Utxo[][], 
-  walletP2pkh: any, 
-  walletSk: Uint8Array, 
+  utxos: Utxo[] | Utxo[][],
+  walletP2pkh: Script,
+  walletSk: Uint8Array,
   walletPk: Uint8Array
 ): TransactionInput[] {
   // 如果传入的是多个数组（如SLP交易的tokenUtxos和feeUtxos），则合并
@@ -54,7 +47,7 @@ export function buildTransactionInputs(
  * @param address - eCash地址
  * @returns P2PKH脚本
  */
-export function createP2pkhScript(address: string): any {
+export function createP2pkhScript(address: string): Script {
   try {
     const { hash } = Address.fromCashAddress(address);
     return Script.p2pkh(Buffer.from(hash, 'hex'));

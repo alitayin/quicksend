@@ -1,25 +1,18 @@
 import { getMnemonic } from '../config/constants';
 import { deriveBuyerKey } from './mnemonic-utils';
 import * as wif from 'wif';
-import * as ecashLib from 'ecash-lib';
-
-const {
-  Ecc,
-  Script,
-  fromHex,
-  shaRmd160,
-} = ecashLib;
+import { Ecc, Script, fromHex, shaRmd160 } from 'ecash-lib';
 
 // 模块级单例，避免每次调用都重新初始化 Ecc
 const ecc = new Ecc();
 
 // 钱包信息接口
 interface WalletInfo {
-  ecc: any;
+  ecc: Ecc;
   walletSk: Uint8Array;
   walletPk: Uint8Array;
   walletPkh: Uint8Array;
-  walletP2pkh: any;
+  walletP2pkh: Script;
   address: string;
   addressIndex: number;
 }
