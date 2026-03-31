@@ -5,10 +5,9 @@ import * as ecashLib from "ecash-lib";
 import { getUtxos, selectSlpUtxos } from "../utxo/utxo-utils";
 import { initializeWallet } from "../wallet/wallet-utils";
 import { buildTransactionInputs, createP2pkhScript } from "../transaction/transaction-utils";
-import { 
-  buildAndBroadcastTransaction, 
-  validateRequiredParams, 
-  logTransactionSummary 
+import {
+  buildAndBroadcastTransaction,
+  validateRequiredParams
 } from "../transaction/transaction-builder";
 import { Recipient, TokenTransactionOptions, TransactionResult } from "../types";
 
@@ -24,82 +23,68 @@ const {
 } = ecashLib;
 
 /**
- * 构建SLP交易输出
+ * 构建代币交易输出（SLP/ALP 共用）
  */
-function buildSlpOutputs(
-  tokenId: string, 
-  finalSendAmounts: bigint[], 
-  recipients: Recipient[], 
-  tokenChange: bigint, 
-  dustLimit: number, 
+function buildTokenOutputs(
+  opReturnScript: any,
+  recipients: Recipient[],
+  tokenChange: bigint,
+  dustLimit: number,
   walletP2pkh: any
 ): any[] {
   const outputs: any[] = [];
-  
-  // OP_RETURN 输出
-  outputs.push({ sats: 0n, script: slpSend(tokenId, SLP_FUNGIBLE, finalSendAmounts) });
-  
-  // 接收方输出
+
+  outputs.push({ sats: 0n, script: opReturnScript });
+
   recipients.forEach(recipient => {
-    outputs.push({ 
-      sats: BigInt(dustLimit), 
-      script: createP2pkhScript(recipient.address) 
+    outputs.push({
+      sats: BigInt(dustLimit),
+      script: createP2pkhScript(recipient.address),
     });
   });
-  
-  // Token 找零输出
+
   if (tokenChange > 0n) {
     outputs.push({ sats: BigInt(dustLimit), script: walletP2pkh });
   }
-  
-  // 手续费找零脚本 - 保持原始逻辑！直接push脚本
+
   outputs.push(walletP2pkh);
-  
+
   return outputs;
 }
 
-/**
- * 构建ALP交易输出
- */
-function buildAlpOutputs(
-  tokenId: string, 
-  finalSendAmounts: bigint[], 
-  recipients: Recipient[], 
-  tokenChange: bigint, 
-  dustLimit: number, 
+function buildSlpOutputs(
+  tokenId: string,
+  finalSendAmounts: bigint[],
+  recipients: Recipient[],
+  tokenChange: bigint,
+  dustLimit: number,
   walletP2pkh: any
 ): any[] {
-  const outputs: any[] = [];
-  
-  // 构造完整的 OP_RETURN 脚本
-  const opReturnPayload = alpSend(tokenId, ALP_STANDARD, finalSendAmounts);
+  return buildTokenOutputs(
+    slpSend(tokenId, SLP_FUNGIBLE, finalSendAmounts),
+    recipients, tokenChange, dustLimit, walletP2pkh
+  );
+}
+
+function buildAlpOutputs(
+  tokenId: string,
+  finalSendAmounts: bigint[],
+  recipients: Recipient[],
+  tokenChange: bigint,
+  dustLimit: number,
+  walletP2pkh: any
+): any[] {
   const opReturnScript = Script.fromOps([
     OP_RETURN,
     OP_RESERVED,
-    pushBytesOp(opReturnPayload)
+    pushBytesOp(alpSend(tokenId, ALP_STANDARD, finalSendAmounts)),
   ]);
-  
-  // OP_RETURN 输出
-  outputs.push({ sats: 0n, script: opReturnScript });
-  
-  // 接收方输出
-  recipients.forEach(recipient => {
-    outputs.push({ 
-      sats: BigInt(dustLimit), 
-      script: createP2pkhScript(recipient.address) 
-    });
-  });
-  
-  // Token 找零输出
-  if (tokenChange > 0n) {
-    outputs.push({ sats: BigInt(dustLimit), script: walletP2pkh });
-  }
-  
-  // 手续费找零脚本 - 保持原始逻辑！直接push脚本
-  outputs.push(walletP2pkh);
-  
-  return outputs;
+  return buildTokenOutputs(
+    opReturnScript,
+    recipients, tokenChange, dustLimit, walletP2pkh
+  );
 }
+
 
 /**
  * 创建代币交易的通用函数
@@ -148,16 +133,6 @@ async function createTokenTransaction(
       dustLimit,
       summary
     } = tokenSelection;
-
-    // 记录交易摘要
-    logTransactionSummary(tokenType, {
-      地址索引: addressIndex,
-      代币UTXOs数量: selectedTokenUtxos.length,
-      手续费UTXOs数量: selectedFeeUtxos.length,
-      接收方数量: recipients.length,
-      代币找零: tokenChange > 0n ? tokenChange.toString() : '无',
-      总输出数量: summary.totalOutputs
-    });
 
     // 构建交易输入和输出
     const inputs = buildTransactionInputs([selectedTokenUtxos, selectedFeeUtxos], walletP2pkh, walletSk, walletPk);

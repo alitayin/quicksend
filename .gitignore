@@ -21,3 +21,12 @@ test/TESTING.md
 # Logs
 *.log
 npm-debug.log*
+
+# Local improvement notes
+IMPROVEMENTS.md
+
+# Local integration tests (contain mnemonic / hit real network)
+test-local.js
+
+# Local reference libraries
+.local-reference/

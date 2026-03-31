@@ -35,8 +35,6 @@ export function initializeWallet(addressIndex: number = 0, mnemonic?: string): W
     throw new Error('助记词未设置：请在环境变量中设置 MNEMONIC 或在函数调用中提供助记词参数');
   }
   
-  console.log('使用助记词派生私钥...');
-  
   // 只调用一次 deriveBuyerKey，获取完整信息
   const derived = deriveBuyerKey(finalMnemonic, addressIndex);
   

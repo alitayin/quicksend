@@ -22,8 +22,6 @@ export function deriveBuyerKey(
   addressIndex: number = 0, 
   derivationPath: string = "m/44'/1899'/0'/0"
 ): DerivedKey {
-  console.log(`从助记词派生密钥...（地址索引: ${addressIndex}）`);
-  
   // 将助记词转换为种子
   const seed = mnemonicToSeed(mnemonic);
   
@@ -50,8 +48,6 @@ export function deriveBuyerKey(
     privateKey: Buffer.from(privateKeyBuffer),
     compressed: true
   });
-  
-  console.log(`密钥派生完成，地址索引 ${addressIndex}:`, ecashAddress);
   
   return {
     wif: buyerWIF,

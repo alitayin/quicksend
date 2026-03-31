@@ -4,7 +4,7 @@ dotenv.config();
 import { getUtxos, selectUtxos } from '../utxo/utxo-utils';
 import { initializeWallet } from '../wallet/wallet-utils';
 import { buildTransactionInputs, createP2pkhScript } from '../transaction/transaction-utils';
-import { buildAndBroadcastTransaction, logTransactionSummary } from '../transaction/transaction-builder';
+import { buildAndBroadcastTransaction } from '../transaction/transaction-builder';
 import { TransactionResult } from '../types';
 
 // 扩展的接收方接口，支持代币交易
@@ -82,19 +82,6 @@ export async function createRawXecTransaction(
     const { selectedUtxos } = utxoSelection;
 
     // 记录交易摘要
-    logTransactionSummary('XEC', {
-      地址索引: addressIndex,
-      策略: utxoStrategy,
-      接收方数量: recipients.length,
-      XEC接收方: xecRecipients.length,
-      代币接收方: tokenRecipients.length,
-      总发送金额: totalSendAmount,
-      UTXOs数量: selectedUtxos.length,
-      总输入: utxoSelection.totalInputValue,
-      预估手续费: utxoSelection.estimatedFee,
-      预计找零: utxoSelection.changeAmount
-    });
-
     // 构建交易输入
     const inputs = buildTransactionInputs(selectedUtxos, walletP2pkh, walletSk, walletPk);
     
