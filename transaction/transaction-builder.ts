@@ -1,22 +1,14 @@
 import { chronik } from "../client/chronik-client";
-import * as ecashLib from "ecash-lib";
+import { TxBuilder, toHex } from "ecash-lib";
 import { ChronikClient } from "chronik-client";
-
-const { TxBuilder, toHex } = ecashLib;
+import { TransactionResult } from "../types";
 
 // 交易选项接口
 interface TransactionOptions {
   feePerKb?: bigint;
   dustSats?: bigint;
   dustLimit?: number;
-  chronik?: ChronikClient; // 新增：可选的chronik实例
-}
-
-// 交易结果接口
-interface TransactionResult {
-  explorerLink: string;
-  broadcastResult: string;
-  txid: string;
+  chronik?: ChronikClient;
 }
 
 // 必需参数配置接口
@@ -61,15 +53,16 @@ export async function buildAndBroadcastTransaction(
     const rawTxHex = toHex(tx.ser());
 
     // 广播交易
-    const broadcastResponse = await client.broadcastTx(rawTxHex);
-    if (!broadcastResponse) {
+    const { txids } = await client.broadcastTxs([rawTxHex]);
+    if (!txids || txids.length === 0) {
       throw new Error("Empty Chronik broadcast response");
     }
+    const txid = txids[0];
 
     return {
-      explorerLink: `https://explorer.e.cash/tx/${broadcastResponse.txid}`,
-      broadcastResult: broadcastResponse.txid,
-      txid: broadcastResponse.txid
+      explorerLink: `https://explorer.e.cash/tx/${txid}`,
+      broadcastResult: txid,
+      txid,
     };
   } catch (error) {
     console.error("Transaction build/broadcast failed:", error);
