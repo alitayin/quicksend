@@ -40,7 +40,7 @@ async function testOriginal() {
 }
 
 /**
- * 新增的 Agora 购买测试
+ * 新增的 Agora 购买测试（单笔模式）
  */
 async function testAgoraBuy() {
     const tokenId = 'd1131675cb62b65909fb45ba53b022da0bd0f34aaa71fc61770115472b186ffb';
@@ -88,10 +88,49 @@ async function testAgoraBuy() {
     }
 }
 
+/**
+ * 聚合购买测试（模式2：自动循环多个订单）
+ */
+async function testAgoraAggregateBuy() {
+    const tokenId = 'd1131675cb62b65909fb45ba53b022da0bd0f34aaa71fc61770115472b186ffb';
+    const maxPrice = 5;
+    const amountToBuy = 1000; // 买大量，测试跨订单
+    const tokenDecimals = 0;
+
+    console.log(`\n=== [Agora 聚合购买测试] 目标: ${amountToBuy} 个代币，最高价 ${maxPrice} XEC ===`);
+
+    try {
+        const result = await quick.buyAgoraTokens({
+            tokenId,
+            amount: amountToBuy,
+            maxPrice,
+            tokenDecimals,
+            mnemonic
+        });
+
+        if (result.success) {
+            console.log(`✓ 聚合购买成功！`);
+            console.log(`  实际买到: ${result.totalBought} 个`);
+            console.log(`  总花费: ${result.totalXECPaid.toFixed(2)} XEC`);
+            console.log(`  平均单价: ${result.avgPrice.toFixed(4)} XEC`);
+            console.log(`  成交订单数: ${result.transactions.length}`);
+            console.log(`  跳过订单数: ${result.skippedOffers}`);
+            result.transactions.forEach((tx, i) => {
+                console.log(`  [${i + 1}] ${tx.txid.slice(0, 16)}... 买入 ${tx.amount} 个`);
+            });
+        } else {
+            console.error('✗ 聚合购买失败:', result.message);
+        }
+    } catch (error) {
+        console.error('聚合购买测试异常:', error);
+    }
+}
+
 async function runAllTests() {
     // 你可以根据需要注释掉其中一个
     // await testOriginal();
-    await testAgoraBuy();
+    // await testAgoraBuy();
+    await testAgoraAggregateBuy();
 }
 
 runAllTests();

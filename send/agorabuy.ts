@@ -15,6 +15,8 @@ import {
     AgoraOffer,
     AgoraAcceptOptions,
     AgoraBuyResult,
+    AgoraBuyOptions,
+    AgoraBuyAggregateResult,
     Utxo
 } from '../types';
 
@@ -295,6 +297,90 @@ export async function acceptAgoraOffer(
             success: false,
             reason: 'ERROR',
             message: error.message || 'Unknown error during Agora purchase'
+        };
+    }
+}
+
+/**
+ * 聚合购买：自动循环购买多个订单直到达到目标数量
+ * 模式2：指定数量 + 最大价格，自动选择订单
+ */
+export async function buyAgoraTokens(options: AgoraBuyOptions): Promise<AgoraBuyAggregateResult> {
+    const { tokenId, amount, maxPrice, tokenDecimals = 0, addressIndex, mnemonic, chronik } = options;
+
+    const transactions: Array<{ txid: string; amount: number; price: number; fee: number }> = [];
+    let totalBought = 0;
+    let totalXECPaid = 0;
+    let skippedOffers = 0;
+
+    try {
+        // 获取所有符合价格条件的订单
+        const offers = await fetchAgoraOffers({ tokenId, tokenDecimals, maxPrice, chronik });
+
+        if (offers.length === 0) {
+            return {
+                success: false,
+                totalBought: 0,
+                totalXECPaid: 0,
+                avgPrice: 0,
+                transactions: [],
+                skippedOffers: 0,
+                message: `No offers found below ${maxPrice} XEC`
+            };
+        }
+
+        // 循环购买订单
+        for (const offer of offers) {
+            if (totalBought >= amount) break;
+
+            const remaining = amount - totalBought;
+            const buyAmount = Math.min(remaining, offer.totalTokenAmount);
+
+            const result = await acceptAgoraOffer(offer, {
+                amount: buyAmount,
+                tokenDecimals,
+                addressIndex,
+                mnemonic,
+                chronik
+            });
+
+            if (result.success && result.txid) {
+                transactions.push({
+                    txid: result.txid,
+                    amount: result.actualAmount || buyAmount,
+                    price: result.pricePerToken || offer.pricePerToken,
+                    fee: result.networkFee || 0
+                });
+                totalBought += result.actualAmount || buyAmount;
+                totalXECPaid += result.totalXECPaid || 0;
+            } else {
+                skippedOffers++;
+            }
+        }
+
+        const avgPrice = totalBought > 0 ? totalXECPaid / totalBought : 0;
+
+        return {
+            success: totalBought > 0,
+            totalBought,
+            totalXECPaid,
+            avgPrice,
+            transactions,
+            skippedOffers,
+            message: totalBought >= amount
+                ? `Successfully bought ${totalBought} tokens`
+                : `Partially filled: bought ${totalBought} of ${amount} tokens`
+        };
+
+    } catch (error: any) {
+        return {
+            success: false,
+            totalBought,
+            totalXECPaid,
+            avgPrice: totalBought > 0 ? totalXECPaid / totalBought : 0,
+            transactions,
+            skippedOffers,
+            message: error.message || 'Unknown error during aggregate purchase'
         };
     }
 }

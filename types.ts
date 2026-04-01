@@ -55,6 +55,37 @@ export interface AgoraBuyResult {
 }
 
 /**
+ * 聚合购买选项（模式2：自动循环购买多个订单）
+ */
+export interface AgoraBuyOptions {
+  tokenId: string;
+  amount: number;              // 目标购买数量
+  maxPrice: number;            // 最高单价（XEC）
+  tokenDecimals?: number;
+  addressIndex?: number;
+  mnemonic?: string;
+  chronik?: ChronikClient;
+}
+
+/**
+ * 聚合购买结果
+ */
+export interface AgoraBuyAggregateResult {
+  success: boolean;
+  totalBought: number;         // 实际买到的总数量
+  totalXECPaid: number;        // 总花费（含手续费）
+  avgPrice: number;            // 平均单价
+  transactions: Array<{
+    txid: string;
+    amount: number;
+    price: number;
+    fee: number;
+  }>;
+  skippedOffers: number;       // 跳过的订单数（买不了的）
+  message?: string;
+}
+
+/**
  * 交易接收方
  *
  * @property address - eCash address (ecash:qq...)
