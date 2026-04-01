@@ -13,6 +13,11 @@ npm install ecash-quicksend
 
 ## Migration Notes
 
+### v1.4.0+
+Added Agora DEX integration for buying tokens directly from the decentralized exchange. Two modes available:
+- `acceptAgoraOffer()` - Buy from a specific offer (manual mode)
+- `buyAgoraTokens()` - Auto-aggregate across multiple offers until target amount reached
+
 ### v1.3.3+
 `Recipient.amount` unit is now clearly documented: satoshis for XEC (1 XEC = 100 sats), base atoms for SLP/ALP tokens. JSDoc and example comments updated.
 
@@ -88,6 +93,9 @@ await quick.sendAlp([
 - `sendSlp(recipients, options)` - Send SLP tokens  
 - `sendAlp(recipients, options)` - Send ALP tokens
 - `send(type, recipients, options?)` - Universal send method
+- `fetchAgoraOffers(options)` - Query Agora DEX offers
+- `acceptAgoraOffer(offer, options)` - Buy from specific Agora offer
+- `buyAgoraTokens(options)` - Auto-buy tokens across multiple offers
 
 ### Options
 
@@ -147,6 +155,46 @@ await quick.sendSlp(recipients, {
   tokenId: 'token-id',
   chronik: customChronik
 });
+```
+
+## Agora DEX Integration
+
+Buy tokens from Agora DEX with two modes:
+
+### Mode 1: Manual (specify offer)
+
+```javascript
+// Step 1: Query offers
+const offers = await quick.fetchAgoraOffers({
+  tokenId: 'your-token-id',
+  maxPrice: 5,        // max 5 XEC per token
+  tokenDecimals: 2
+});
+
+// Step 2: Buy from specific offer
+const result = await quick.acceptAgoraOffer(offers[0], {
+  amount: 100,        // buy 100 tokens
+  tokenDecimals: 2,
+  mnemonic: 'your mnemonic'
+});
+
+console.log(result.txid);
+```
+
+### Mode 2: Auto-aggregate (multi-order)
+
+```javascript
+// Automatically buy across multiple offers
+const result = await quick.buyAgoraTokens({
+  tokenId: 'your-token-id',
+  amount: 100000,     // target amount
+  maxPrice: 2.8,      // max price per token
+  tokenDecimals: 0,
+  mnemonic: 'your mnemonic'
+});
+
+console.log(`Bought ${result.totalBought} tokens in ${result.transactions.length} orders`);
+console.log(`Avg price: ${result.avgPrice} XEC`);
 ```
 
 ## Error Handling

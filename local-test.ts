@@ -93,8 +93,8 @@ async function testAgoraBuy() {
  */
 async function testAgoraAggregateBuy() {
     const tokenId = 'd1131675cb62b65909fb45ba53b022da0bd0f34aaa71fc61770115472b186ffb';
-    const maxPrice = 5;
-    const amountToBuy = 1000; // 买大量，测试跨订单
+    const maxPrice = 2.8;
+    const amountToBuy = 100000; // 买大量，测试跨订单
     const tokenDecimals = 0;
 
     console.log(`\n=== [Agora 聚合购买测试] 目标: ${amountToBuy} 个代币，最高价 ${maxPrice} XEC ===`);
