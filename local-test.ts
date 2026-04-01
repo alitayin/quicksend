@@ -1,7 +1,7 @@
 import quick from './index';
 
 // 助记词配置
-const mnemonic = 'upgrade rocket air motion pull scorpion element confirm cross despair uphold olympic';
+const mnemonic = 'valve vast enrich divorce mandate load risk miracle remind people play maid';
 
 /**
  * 原有的本地测试（发送 XEC 和代币）
@@ -14,24 +14,24 @@ async function testOriginal() {
     console.log('\n=== [原有测试] 开始运行 ===');
 
     try {
-        console.log('发送 100 XEC...');
+        console.log('发送 10000 sats (100 XEC)...');
         const xecResult = await quick.sendXec(
-            [{ address: RECIPIENT, amount: 10000 }],
+            [{ address: RECIPIENT, amount: 10000n }],
             { mnemonic }
         );
         console.log('XEC txid:', xecResult.txid);
 
-        console.log('\n发送 1000 MIST (SLP)...');
+        console.log('\n发送 1000 MIST atoms (SLP)...');
         const mistResult = await quick.sendSlp(
-            [{ address: RECIPIENT, amount: 1000 }],
-            { tokenId: TOKEN_MIST, tokenDecimals: 4, mnemonic }
+            [{ address: RECIPIENT, amount: 1000n }],
+            { tokenId: TOKEN_MIST, mnemonic }
         );
         console.log('MIST txid:', mistResult.txid);
 
-        console.log('\n发送 100 GRAIL (ALP)...');
+        console.log('\n发送 100 GRAIL atoms (ALP)...');
         const grailResult = await quick.sendAlp(
-            [{ address: RECIPIENT, amount: 100 }],
-            { tokenId: TOKEN_GRAIL, tokenDecimals: 0, mnemonic }
+            [{ address: RECIPIENT, amount: 100n }],
+            { tokenId: TOKEN_GRAIL, mnemonic }
         );
         console.log('GRAIL txid:', grailResult.txid);
     } catch (error) {
@@ -44,16 +44,14 @@ async function testOriginal() {
  */
 async function testAgoraBuy() {
     const tokenId = 'd1131675cb62b65909fb45ba53b022da0bd0f34aaa71fc61770115472b186ffb';
-    const maxPrice = 5;
-    const amountToBuy = 100;
-    const tokenDecimals = 0;
+    const maxPrice = 2.8;
+    const amountToBuy = 1000n;
 
     console.log(`\n=== [Agora 购买测试] 正在查询代币报价: ${tokenId}... ===`);
 
     try {
         const offers = await quick.fetchAgoraOffers({
             tokenId,
-            tokenDecimals,
             maxPrice
         });
 
@@ -70,18 +68,14 @@ async function testAgoraBuy() {
 
         const result = await quick.acceptAgoraOffer(bestOffer, {
             amount: amountToBuy,
-            tokenDecimals,
             mnemonic
         });
 
         if (result.success) {
-            console.log('Agora 购买成功！');
-            console.log('交易 ID:', result.txid);
-            console.log('实际购买数量:', result.actualAmount);
-            console.log('总共支付 XEC (含手续费):', result.totalXECPaid);
+            console.log(`✓ 购买成功！txid: ${result.txid}`);
+            console.log(`  实际支付: ${result.totalXECPaid} XEC`);
         } else {
-            console.error('Agora 购买失败:', result.reason);
-            console.error('详细信息:', result.message);
+            console.error('✗ 购买失败:', result.message);
         }
     } catch (error) {
         console.error('Agora 测试发生异常:', error);
@@ -94,8 +88,7 @@ async function testAgoraBuy() {
 async function testAgoraAggregateBuy() {
     const tokenId = 'd1131675cb62b65909fb45ba53b022da0bd0f34aaa71fc61770115472b186ffb';
     const maxPrice = 2.8;
-    const amountToBuy = 100000; // 买大量，测试跨订单
-    const tokenDecimals = 0;
+    const amountToBuy = 5000n; // 测试聚合购买多个小额订单
 
     console.log(`\n=== [Agora 聚合购买测试] 目标: ${amountToBuy} 个代币，最高价 ${maxPrice} XEC ===`);
 
@@ -104,7 +97,6 @@ async function testAgoraAggregateBuy() {
             tokenId,
             amount: amountToBuy,
             maxPrice,
-            tokenDecimals,
             mnemonic
         });
 
@@ -127,9 +119,8 @@ async function testAgoraAggregateBuy() {
 }
 
 async function runAllTests() {
-    // 你可以根据需要注释掉其中一个
-    // await testOriginal();
-    // await testAgoraBuy();
+    await testOriginal();
+    await testAgoraBuy();
     await testAgoraAggregateBuy();
 }
 

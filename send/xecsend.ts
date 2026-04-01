@@ -8,9 +8,8 @@ import { ChronikClient } from 'chronik-client';
 // 扩展的接收方接口，支持代币交易
 interface ExtendedRecipient {
   address: string;
-  amount: number;
+  amount: bigint;
   tokenId?: string;
-  decimals?: number;
 }
 
 // XEC交易特定的结果接口，扩展基础TransactionResult
@@ -19,11 +18,10 @@ interface XecTransactionResult extends TransactionResult {
   recipients: number;
   xecRecipients: number;
   tokenRecipients: number;
-  totalSent: number;
+  totalSent: bigint;
   tokenTransfers: Array<{
     tokenId: string;
-    amount: number;
-    decimals?: number;
+    amount: bigint;
     address: string;
   }>;
 }
@@ -43,18 +41,13 @@ export async function createRawXecTransaction(
     
     // 验证每个接收方对象
     for (const recipient of recipients) {
-      if (!recipient.address || typeof recipient.amount !== 'number') {
-        throw new Error('Each recipient must have address and amount fields');
+      if (!recipient.address || typeof recipient.amount !== 'bigint') {
+        throw new Error('Each recipient must have address and amount (bigint) fields');
       }
-      
+
       // 如果提供了tokenId，验证其格式
       if (recipient.tokenId && typeof recipient.tokenId !== 'string') {
         throw new Error('tokenId must be a string if provided');
-      }
-      
-      // 如果提供了decimals，验证其为非负整数
-      if (recipient.decimals !== undefined && (!Number.isInteger(recipient.decimals) || recipient.decimals < 0)) {
-        throw new Error('decimals must be a non-negative integer if provided');
       }
     }
 
@@ -67,16 +60,16 @@ export async function createRawXecTransaction(
     }
 
     // 计算总发送金额 (只计算XEC，不包括代币)
-    const totalSendAmount: number = recipients
+    const totalSendAmount: bigint = recipients
       .filter(recipient => !recipient.tokenId) // 只计算非代币交易
-      .reduce((sum, recipient) => sum + recipient.amount, 0);
+      .reduce((sum, recipient) => sum + recipient.amount, 0n);
 
     // 分析交易类型
     const xecRecipients: ExtendedRecipient[] = recipients.filter(r => !r.tokenId);
     const tokenRecipients: ExtendedRecipient[] = recipients.filter(r => r.tokenId);
 
     // 选择UTXOs
-    const utxoSelection = selectUtxos(utxos, totalSendAmount, utxoStrategy);
+    const utxoSelection = selectUtxos(utxos, Number(totalSendAmount), utxoStrategy);
     const { selectedUtxos } = utxoSelection;
 
     // 记录交易摘要
@@ -96,9 +89,6 @@ export async function createRawXecTransaction(
       // 如果是代币交易，添加代币信息
       if (recipient.tokenId) {
         output.tokenId = recipient.tokenId;
-        if (recipient.decimals !== undefined) {
-          output.decimals = recipient.decimals;
-        }
       }
       
       outputs.push(output);
@@ -123,7 +113,6 @@ export async function createRawXecTransaction(
       tokenTransfers: tokenRecipients.map(r => ({
         tokenId: r.tokenId!,
         amount: r.amount,
-        decimals: r.decimals,
         address: r.address
       }))
     };

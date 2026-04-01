@@ -181,7 +181,6 @@ function selectUtxos(utxos: Utxo[], sendAmount: number, strategy: UtxoStrategy =
  * @param utxos - 所有可用的UTXOs
  * @param tokenId - SLP代币ID
  * @param recipients - 接收方数组，包含address和amount
- * @param tokenDecimals - 代币小数位数
  * @param options - 选项
  * @returns 包含选择的UTXOs和相关信息
  */
@@ -189,7 +188,6 @@ function selectSlpUtxos(
   utxos: Utxo[],
   tokenId: string,
   recipients: Recipient[],
-  tokenDecimals: number = 0,
   options: SlpUtxoOptions = {}
 ): SlpUtxoSelection {
   const {

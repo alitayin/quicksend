@@ -113,9 +113,8 @@ async function createTokenTransaction(
 
     const {
       tokenId,
-      tokenDecimals = 0, // 默认0：amount 直接作为 atoms 使用
       addressIndex = 0,
-      feeStrategy = 'all', 
+      feeStrategy = 'all',
       tokenStrategy = 'all',
       mnemonic, // 从选项中提取助记词
       chronik: chronikClient // 新增：从选项中提取chronik客户端
@@ -134,7 +133,7 @@ async function createTokenTransaction(
     }
 
     // 选择代币UTXOs
-    const tokenSelection = selectSlpUtxos(utxos, tokenId, recipients, tokenDecimals, {
+    const tokenSelection = selectSlpUtxos(utxos, tokenId, recipients, {
       feeStrategy,
       tokenStrategy
     });

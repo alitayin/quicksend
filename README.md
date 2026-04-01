@@ -40,8 +40,8 @@ dotenv.config(); // call this yourself
 import quick from 'ecash-quicksend';
 ```
 
-### v1.3.0+
-`tokenDecimals` is now optional. `amount` in token recipients is in **atoms** (smallest unit). `tokenDecimals` is kept for backward compatibility but has no effect.
+### v1.7.1+
+**BREAKING CHANGE**: `tokenDecimals` is removed. `amount` in token recipients is now in **atoms** (smallest unit) and **must be a `bigint`**. This ensures atomicity and prevents floating-point precision issues.
 
 ---
 

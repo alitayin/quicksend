@@ -6,7 +6,6 @@ import { AgoraOffer as EcashAgoraOffer } from 'ecash-agora';
  */
 export interface AgoraFetchOptions {
   tokenId: string;
-  tokenDecimals?: number; // 默认 0
   maxPrice?: number;      // 每个代币最高 XEC 价格
   chronik?: ChronikClient;
 }
@@ -17,7 +16,7 @@ export interface AgoraFetchOptions {
 export interface AgoraOffer {
   offer: EcashAgoraOffer;
   pricePerToken: number;
-  totalTokenAmount: number;
+  totalTokenAmount: bigint;
   totalXEC: number;
   offerType: 'PARTIAL' | 'ONE_TO_ONE';
 }
@@ -26,8 +25,7 @@ export interface AgoraOffer {
  * acceptAgoraOffer 的执行参数
  */
 export interface AgoraAcceptOptions {
-  amount: number;
-  tokenDecimals?: number;
+  amount: bigint;
   addressIndex?: number;
   mnemonic?: string;
   chronik?: ChronikClient;
@@ -42,7 +40,7 @@ export interface AgoraBuyResult {
   message?: string;
   txid?: string;
   explorerLink?: string;
-  actualAmount?: number;
+  actualAmount?: bigint;
   totalXECPaid?: number;
   pricePerToken?: number;
   networkFee?: number;
@@ -54,9 +52,8 @@ export interface AgoraBuyResult {
  */
 export interface AgoraBuyOptions {
   tokenId: string;
-  amount: number;
+  amount: bigint;
   maxPrice: number;
-  tokenDecimals?: number;
   addressIndex?: number;
   mnemonic?: string;
   chronik?: ChronikClient;
@@ -67,12 +64,12 @@ export interface AgoraBuyOptions {
  */
 export interface AgoraBuyAggregateResult {
   success: boolean;
-  totalBought: number;
+  totalBought: bigint;
   totalXECPaid: number;
   avgPrice: number;
   transactions: Array<{
     txid: string;
-    amount: number;
+    amount: bigint;
     price: number;
     fee: number;
   }>;
@@ -85,9 +82,8 @@ export interface AgoraBuyAggregateResult {
  */
 export interface AgoraSellOptions {
   tokenId: string;
-  tokenAmount: number;
+  tokenAmount: bigint;
   pricePerToken: number;
-  tokenDecimals?: number;
   addressIndex?: number;
   mnemonic?: string;
   chronik?: ChronikClient;
@@ -102,7 +98,7 @@ export interface AgoraSellResult {
   message?: string;
   txid?: string;
   explorerLink?: string;
-  tokenAmount?: number;
+  tokenAmount?: bigint;
   pricePerToken?: number;
   offerType?: string;
 }
@@ -140,7 +136,7 @@ export interface AgoraCancelResult {
  */
 export interface Recipient {
   address: string;
-  amount: number; // 必须是 number 以兼容现有代码
+  amount: bigint;
 }
 
 /**
@@ -162,8 +158,7 @@ export interface Utxo {
  */
 export interface SlpToken {
   tokenId: string;
-  amount?: number | bigint;
-  atoms: string | bigint;
+  atoms: bigint;
   isMintBaton: boolean;
 }
 
@@ -182,7 +177,6 @@ export interface TransactionResult {
  */
 export interface TokenTransactionOptions {
   tokenId: string;
-  tokenDecimals?: number;
   addressIndex?: number;
   feeStrategy?: FeeStrategy;
   tokenStrategy?: TokenStrategy;
@@ -207,7 +201,6 @@ export interface GeneralSendOptions {
   utxoStrategy?: UtxoStrategy;
   addressIndex?: number;
   tokenId?: string;
-  tokenDecimals?: number;
   feeStrategy?: FeeStrategy;
   tokenStrategy?: TokenStrategy;
   mnemonic?: string;

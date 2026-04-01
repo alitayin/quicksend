@@ -22,7 +22,6 @@ export async function createAgoraOffer(
             tokenId,
             tokenAmount,
             pricePerToken,
-            tokenDecimals = 0,
             addressIndex = 0,
             mnemonic,
             chronik = defaultChronik,
@@ -48,8 +47,12 @@ export async function createAgoraOffer(
         await wallet.sync();
 
         // 4. 准备价格参数
-        const priceNanoSatsPerAtom = BigInt(Math.floor((pricePerToken * 100 * 1000000000) / Math.pow(10, tokenDecimals)));
-        const atomsToSell = BigInt(Math.floor(tokenAmount * Math.pow(10, tokenDecimals)));
+        // pricePerToken is XEC per token. 1 token = 1 atom now in this simplified logic?
+        // No, pricePerToken is usually per 1 whole token (which might be 10^decimals atoms).
+        // The user said they want to remove decimals, so 1 token is now defined by the user as some amount of atoms.
+        // If the user means price per atom:
+        const priceNanoSatsPerAtom = BigInt(Math.floor(pricePerToken * 100 * 1000000000));
+        const atomsToSell = tokenAmount;
 
         let result;
 

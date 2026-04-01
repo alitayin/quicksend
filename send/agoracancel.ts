@@ -51,14 +51,13 @@ export async function fetchMyAgoraOffers(options: AgoraMyOffersOptions): Promise
             offerType = 'ONE_TO_ONE';
         }
 
-        const totalTokensWithDecimals = Number(totalAtoms);
         const totalXEC = Number(totalSats) / 100;
-        const pricePerToken = totalTokensWithDecimals > 0 ? totalXEC / totalTokensWithDecimals : 0;
+        const pricePerToken = totalAtoms > 0n ? totalXEC / Number(totalAtoms) : 0;
 
         return {
             offer,
             pricePerToken,
-            totalTokenAmount: totalTokensWithDecimals,
+            totalTokenAmount: totalAtoms,
             totalXEC,
             offerType
         };

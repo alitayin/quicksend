@@ -122,7 +122,7 @@ function createAgoraChronik(chronik: any): any {
  * 第一步：查询报价
  */
 export async function fetchAgoraOffers(options: AgoraFetchOptions): Promise<AgoraOffer[]> {
-    const { tokenId, tokenDecimals = 0, maxPrice = 0, chronik = defaultChronik } = options;
+    const { tokenId, maxPrice = 0, chronik = defaultChronik } = options;
     const agora = new Agora(createAgoraChronik(chronik));
 
     const offers = await agora.activeOffersByTokenId(tokenId);
@@ -143,14 +143,13 @@ export async function fetchAgoraOffers(options: AgoraFetchOptions): Promise<Agor
             offerType = 'ONE_TO_ONE';
         }
 
-        const totalTokensWithDecimals = Number(totalAtoms) / Math.pow(10, tokenDecimals);
         const totalXEC = Number(totalSats) / 100;
-        const pricePerToken = totalTokensWithDecimals > 0 ? totalXEC / totalTokensWithDecimals : 0;
+        const pricePerToken = totalAtoms > 0n ? totalXEC / Number(totalAtoms) : 0;
 
         return {
             offer,
             pricePerToken,
-            totalTokenAmount: totalTokensWithDecimals,
+            totalTokenAmount: totalAtoms,
             totalXEC,
             offerType
         };
@@ -169,12 +168,12 @@ export async function acceptAgoraOffer(
     options: AgoraAcceptOptions
 ): Promise<AgoraBuyResult> {
     try {
-        const { amount, tokenDecimals = 0, addressIndex = 0, mnemonic, chronik = defaultChronik } = options;
-        if (amount <= 0) {
+        const { amount, addressIndex = 0, mnemonic, chronik = defaultChronik } = options;
+        if (amount <= 0n) {
             return { success: false, reason: 'INVALID_AMOUNT', message: 'Amount must be greater than 0' };
         }
 
-        const scaledAmount = BigInt(Math.floor(amount * Math.pow(10, tokenDecimals)));
+        const scaledAmount = amount;
         const offer = agoraOffer.offer;
         const availableAtoms = getTokenAtoms(offer.token);
 
@@ -187,7 +186,7 @@ export async function acceptAgoraOffer(
                 return {
                     success: false,
                     reason: 'AMOUNT_TOO_SMALL',
-                    message: `Amount too small. Minimum: ${Number(minAccepted) / Math.pow(10, tokenDecimals)}`,
+                    message: `Amount too small. Minimum: ${minAccepted} atoms`,
                     details: { minAccepted: Number(minAccepted) }
                 };
             }
@@ -288,9 +287,9 @@ export async function acceptAgoraOffer(
             reason: 'SUCCESS',
             txid: broadcastRes.txid,
             explorerLink: `https://explorer.e.cash/tx/${broadcastRes.txid}`,
-            actualAmount: Number(acceptedAtoms) / Math.pow(10, tokenDecimals),
+            actualAmount: acceptedAtoms,
             totalXECPaid: Number(askedSats + acceptFeeSats) / 100,
-            pricePerToken: Number(askedSats) / 100 / (Number(acceptedAtoms) / Math.pow(10, tokenDecimals)),
+            pricePerToken: Number(askedSats) / 100 / Number(acceptedAtoms),
             networkFee: Number(acceptFeeSats) / 100
         };
 
@@ -309,21 +308,21 @@ export async function acceptAgoraOffer(
  * 模式2：指定数量 + 最大价格，自动选择订单
  */
 export async function buyAgoraTokens(options: AgoraBuyOptions): Promise<AgoraBuyAggregateResult> {
-    const { tokenId, amount, maxPrice, tokenDecimals = 0, addressIndex, mnemonic, chronik } = options;
+    const { tokenId, amount, maxPrice, addressIndex, mnemonic, chronik } = options;
 
-    const transactions: Array<{ txid: string; amount: number; price: number; fee: number }> = [];
-    let totalBought = 0;
+    const transactions: Array<{ txid: string; amount: bigint; price: number; fee: number }> = [];
+    let totalBought = 0n;
     let totalXECPaid = 0;
     let skippedOffers = 0;
 
     try {
         // 获取所有符合价格条件的订单
-        const offers = await fetchAgoraOffers({ tokenId, tokenDecimals, maxPrice, chronik });
+        const offers = await fetchAgoraOffers({ tokenId, maxPrice, chronik });
 
         if (offers.length === 0) {
             return {
                 success: false,
-                totalBought: 0,
+                totalBought: 0n,
                 totalXECPaid: 0,
                 avgPrice: 0,
                 transactions: [],
@@ -337,34 +336,34 @@ export async function buyAgoraTokens(options: AgoraBuyOptions): Promise<AgoraBuy
             if (totalBought >= amount) break;
 
             const remaining = amount - totalBought;
-            const buyAmount = Math.min(remaining, offer.totalTokenAmount);
+            const buyAmount = remaining < offer.totalTokenAmount ? remaining : offer.totalTokenAmount;
 
             const result = await acceptAgoraOffer(offer, {
                 amount: buyAmount,
-                tokenDecimals,
                 addressIndex,
                 mnemonic,
                 chronik
             });
 
             if (result.success && result.txid) {
+                const actualAmount = result.actualAmount || buyAmount;
                 transactions.push({
                     txid: result.txid,
-                    amount: result.actualAmount || buyAmount,
+                    amount: actualAmount,
                     price: result.pricePerToken || offer.pricePerToken,
                     fee: result.networkFee || 0
                 });
-                totalBought += result.actualAmount || buyAmount;
+                totalBought += actualAmount;
                 totalXECPaid += result.totalXECPaid || 0;
             } else {
                 skippedOffers++;
             }
         }
 
-        const avgPrice = totalBought > 0 ? totalXECPaid / totalBought : 0;
+        const avgPrice = totalBought > 0n ? totalXECPaid / Number(totalBought) : 0;
 
         return {
-            success: totalBought > 0,
+            success: totalBought > 0n,
             totalBought,
             totalXECPaid,
             avgPrice,
@@ -380,7 +379,7 @@ export async function buyAgoraTokens(options: AgoraBuyOptions): Promise<AgoraBuy
             success: false,
             totalBought,
             totalXECPaid,
-            avgPrice: totalBought > 0 ? totalXECPaid / totalBought : 0,
+            avgPrice: totalBought > 0n ? totalXECPaid / Number(totalBought) : 0,
             transactions,
             skippedOffers,
             message: error.message || 'Unknown error during aggregate purchase'

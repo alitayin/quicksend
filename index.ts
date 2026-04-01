@@ -120,7 +120,6 @@ class TransactionManager {
         }
         return await this.sendSlp(recipients, {
           tokenId: options.tokenId,
-          tokenDecimals: options.tokenDecimals,
           addressIndex: options.addressIndex,
           feeStrategy: options.feeStrategy,
           tokenStrategy: options.tokenStrategy,
@@ -133,7 +132,6 @@ class TransactionManager {
         }
         return await this.sendAlp(recipients, {
           tokenId: options.tokenId,
-          tokenDecimals: options.tokenDecimals,
           addressIndex: options.addressIndex,
           feeStrategy: options.feeStrategy,
           tokenStrategy: options.tokenStrategy,
