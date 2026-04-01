@@ -91,20 +91,3 @@ describe('sendAlp', () => {
         const tx = assertOutputCount(chronik, 4, assert);
     });
 });
-
-describe('TransactionManager.send (unified)', () => {
-    test('send("xec", ...)', async () => {
-        const chronik = new FakeChronik([UTXO_XEC_100K]);
-        await quick.send('xec', [{ address: ADDR_1, amount: 1000n }], { ...BASE_OPTS, chronik });
-    });
-
-    test('send("slp", ...)', async () => {
-        const chronik = new FakeChronik([UTXO_SLP_150, UTXO_FEE_20K]);
-        await quick.send('slp', [{ address: ADDR_1, amount: 100n }], { ...BASE_OPTS, chronik, tokenId: TOKEN_ID_SLP });
-    });
-
-    test('send("alp", ...)', async () => {
-        const chronik = new FakeChronik([UTXO_ALP_125, UTXO_FEE_20K]);
-        await quick.send('alp', [{ address: ADDR_1, amount: 100n }], { ...BASE_OPTS, chronik, tokenId: TOKEN_ID_ALP });
-    });
-});

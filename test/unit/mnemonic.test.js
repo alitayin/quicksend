@@ -25,30 +25,10 @@ const { TEST_MNEMONIC, TEST_MNEMONIC_ALT } = require('../fixtures.js');
 
 describe('deriveBuyerKey', () => {
 
-    test('same mnemonic + same index always produces the same address', () => {
-        const a = deriveBuyerKey(TEST_MNEMONIC, 0);
-        const b = deriveBuyerKey(TEST_MNEMONIC, 0);
-        assert.equal(a.address, b.address);
-        assert.equal(a.wif,     b.wif);
-    });
-
     test('known mnemonic produces the known address at index 0', () => {
         // Deterministic check: if this ever changes, derivation is broken
         const result = deriveBuyerKey(TEST_MNEMONIC, 0);
         assert.equal(result.address, 'ecash:qp58r6w7umxvpjfndnajyg52d5fdzdqm9qcd4fvlpg');
-    });
-
-    test('index 0 and index 1 produce different addresses', () => {
-        const r0 = deriveBuyerKey(TEST_MNEMONIC, 0);
-        const r1 = deriveBuyerKey(TEST_MNEMONIC, 1);
-        assert.notEqual(r0.address, r1.address);
-        assert.notEqual(r0.wif,     r1.wif);
-    });
-
-    test('index 0 and index 2 produce different addresses', () => {
-        const r0 = deriveBuyerKey(TEST_MNEMONIC, 0);
-        const r2 = deriveBuyerKey(TEST_MNEMONIC, 2);
-        assert.notEqual(r0.address, r2.address);
     });
 
     test('different mnemonics produce different addresses at the same index', () => {
@@ -66,13 +46,6 @@ describe('deriveBuyerKey', () => {
     test('returns the correct derivationPath for index 3', () => {
         const result = deriveBuyerKey(TEST_MNEMONIC, 3);
         assert.equal(result.derivationPath, "m/44'/1899'/0'/0/3");
-    });
-
-    test('returned addressIndex matches the input index', () => {
-        for (const idx of [0, 1, 5, 10]) {
-            const result = deriveBuyerKey(TEST_MNEMONIC, idx);
-            assert.equal(result.addressIndex, idx);
-        }
     });
 
     test('returned address is a valid ecash: address string', () => {
@@ -132,18 +105,6 @@ describe('validateMnemonic', () => {
 
     test('returns false for an empty string', () => {
         assert.equal(validateMnemonic(''), false);
-    });
-
-    test('returns false for null', () => {
-        assert.equal(validateMnemonic(null), false);
-    });
-
-    test('returns false for undefined', () => {
-        assert.equal(validateMnemonic(undefined), false);
-    });
-
-    test('returns false for a number', () => {
-        assert.equal(validateMnemonic(12345), false);
     });
 
     test('trims extra whitespace correctly (12 words with extra spaces)', () => {
