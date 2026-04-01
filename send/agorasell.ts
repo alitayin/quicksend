@@ -83,7 +83,11 @@ export async function createAgoraOffer(
                 offeredAtoms: atomsToSell,
                 priceNanoSatsPerAtom,
                 makerPk: wallet.pk,
-                minAcceptedAtoms: atomsToSell / 100n > 1n ? atomsToSell / 100n : 1n,
+                // Ensure minAcceptedAtoms * pricePerToken is at least 5.46 XEC (546 satoshis) to avoid dust errors
+                minAcceptedAtoms: BigInt(Math.max(
+                    Number(atomsToSell / 100n > 1n ? atomsToSell / 100n : 1n),
+                    Math.ceil(6.0 / pricePerToken) // Using 6.0 XEC as a safe threshold
+                )),
                 tokenId,
                 tokenProtocol,
                 tokenType
