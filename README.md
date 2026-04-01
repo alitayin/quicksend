@@ -8,9 +8,26 @@ Unified transaction manager for eCash (XEC), SLP, and ALP.
 npm install ecash-quicksend
 ```
 
-## Quick Start
+### Setup
 
-All amounts in `ecash-quicksend` are specified in **atoms** (satoshis) using `BigInt` (e.g., `1000n`).
+**Environment Variables**
+
+This library does not load `.env` files automatically. If you use one, manage it with `dotenv` in your entry point:
+
+```javascript
+import 'dotenv/config'; // or dotenv.config()
+import { sendXec } from 'ecash-quicksend';
+
+// Library will now pick up process.env.MNEMONIC
+```
+
+**Manual Options**
+
+You can also pass `mnemonic` and `chronik` directly in the `options` object of any method.
+
+---
+
+## Quick Start
 
 ### Send XEC
 
@@ -83,6 +100,17 @@ const offers = await fetchAgoraOffers({
   tokenId: 'your-token-id',
   maxPrice: 2.5
 });
+
+/*
+  offers returns Array<AgoraOffer> sorted by price:
+  {
+    offer: Object,           // Raw offer data for acceptAgoraOffer
+    pricePerToken: number,   // Price in XEC
+    totalTokenAmount: bigint,// Available atoms
+    totalXEC: number,        // Total XEC cost for entire offer
+    offerType: string        // 'PARTIAL' or 'ONE_TO_ONE'
+  }
+*/
 
 // 2. Accept the best offer (first in sorted list)
 const result = await acceptAgoraOffer(offers[0], {
