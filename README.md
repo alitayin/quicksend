@@ -164,6 +164,7 @@ const cancelResult = await cancelAgoraOffer(myOffers[0], {
 
 ## Changelog
 
+- v2.0.2: Dynamically calculate minAcceptedAtoms to prevent dust errors.
 - v2.0.0: Unified SLP/ALP handling via auto-detection. Added support for SLP listings on Agora.
 - v1.7.1: Removed tokenDecimals, amounts are now BigInt atoms.
 - v1.6.1: Added Agora DEX management (fetch/cancel).
