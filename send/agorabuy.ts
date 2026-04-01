@@ -1,4 +1,3 @@
-import { randomBytes } from 'crypto';
 import { Agora } from 'ecash-agora';
 import {
     P2PKHSignatory,
@@ -20,6 +19,15 @@ import {
 } from '../types';
 
 const ecc = new Ecc();
+
+/**
+ * Agora 协议使用的固定 covenant 密钥对
+ * 这个密钥对不控制任何资金，只用于构建协议脚本
+ */
+const DUMMY_KEYPAIR = {
+    sk: fromHex('33'.repeat(32)),
+    pk: fromHex('023c72addb4fdf09af94f0c94d7fe92a386a7e70cf8a1d85916386bb2535c7b1b1'),
+};
 
 /**
  * 规范化 UTXO 字段，确保兼容 ecash-agora 的 bigint 要求
@@ -256,13 +264,10 @@ export async function acceptAgoraOffer(
             };
         }
 
-        const covenantSk = randomBytes(32);
-        const covenantPk = ecc.derivePubkey(covenantSk);
-
         const acceptTx = offer.acceptTx({
             ecc,
-            covenantSk,
-            covenantPk,
+            covenantSk: DUMMY_KEYPAIR.sk,
+            covenantPk: DUMMY_KEYPAIR.pk,
             fuelInputs,
             recipientScript: wallet.walletP2pkh,
             acceptedAtoms,
