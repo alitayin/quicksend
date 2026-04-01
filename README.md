@@ -13,6 +13,10 @@ npm install ecash-quicksend
 
 ## Migration Notes
 
+### v1.5.1+
+Added Agora DEX listing functionality:
+- `createAgoraOffer()` - List your tokens for sale on the DEX.
+
 ### v1.4.0+
 Added Agora DEX integration for buying tokens directly from the decentralized exchange. Two modes available:
 - `acceptAgoraOffer()` - Buy from a specific offer (manual mode)
