@@ -2,6 +2,57 @@
 
 // 引入ChronikClient类型
 import { ChronikClient } from "chronik-client";
+import { AgoraOffer as EcashAgoraOffer } from 'ecash-agora';
+
+/**
+ * fetchAgoraOffers 的查询参数
+ */
+export interface AgoraFetchOptions {
+  tokenId: string;
+  tokenDecimals?: number; // 默认 0，用于计算展示单价
+  maxPrice?: number;      // 每个代币最高 XEC 价格（不传或 0 = 不限价）
+  chronik?: ChronikClient;
+}
+
+/**
+ * 单个报价（包含定价信息，内含原始 offer 对象供后续成交使用）
+ */
+export interface AgoraOffer {
+  offer: EcashAgoraOffer;       // 原始 ecash-agora 报价对象
+  pricePerToken: number;        // 单价 (XEC)
+  totalTokenAmount: number;     // 可买总量 (展示单位)
+  totalXEC: number;             // 总价 (XEC)
+  offerType: 'PARTIAL' | 'ONE_TO_ONE';
+}
+
+/**
+ * acceptAgoraOffer 的执行参数
+ */
+export interface AgoraAcceptOptions {
+  amount: number;          // 想买的数量 (展示单位，按 tokenDecimals 缩放)
+  tokenDecimals?: number;  // 默认 0
+  addressIndex?: number;   // 默认 0
+  mnemonic?: string;       // 不传则从环境变量读取
+  chronik?: ChronikClient;
+}
+
+/**
+ * Agora 购买执行结果
+ */
+export interface AgoraBuyResult {
+  success: boolean;
+  reason: string; // 'SUCCESS' | 'AMOUNT_TOO_SMALL' | 'INVALID_REMAINING_AMOUNT' | 'INSUFFICIENT_BALANCE' | ...
+  message?: string;
+  // 成功时：
+  txid?: string;
+  explorerLink?: string;
+  actualAmount?: number;
+  totalXECPaid?: number;
+  pricePerToken?: number;
+  networkFee?: number;
+  // 失败时：
+  details?: Record<string, unknown>;
+}
 
 /**
  * 交易接收方

@@ -45,6 +45,7 @@
   ],
   "dependencies": {
     "chronik-client": "^3.1.1",
+    "ecash-agora": "^4.0.0",
     "ecash-lib": "^3.2.0",
     "wif": "^5.0.0"
   },
@@ -54,7 +55,6 @@
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   },
-  "peerDependencies": {},
   "exports": {
     ".": {
       "import": "./dist/index.js",
