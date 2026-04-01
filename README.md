@@ -155,8 +155,6 @@ const cancelResult = await cancelAgoraOffer(myOffers[0], {
 
 - `sendXec(recipients, options)`: Send XEC to one or more addresses.
 - `sendToken(recipients, options)`: Send tokens (auto-detects SLP/ALP).
-- `sendSlp(recipients, options)`: Send SLP tokens (Deprecated: use `sendToken`).
-- `sendAlp(recipients, options)`: Send ALP tokens (Deprecated: use `sendToken`).
 - `createAgoraOffer(options)`: List tokens (SLP or ALP) for sale on Agora.
 - `buyAgoraTokens(options)`: Market buy tokens up to a max price.
 - `acceptAgoraOffer(offer, options)`: Buy from a specific Agora offer.
