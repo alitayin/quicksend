@@ -145,16 +145,9 @@ const cancelResult = await cancelAgoraOffer(myOffers[0], {
 | `mnemonic` | `string` | Wallet mnemonic | `process.env.MNEMONIC` |
 | `chronik` | `ChronikClient` | Custom Chronik instance | Default library instance |
 | `addressIndex`| `number` | HD wallet address index | `0` |
-
-### UTXO Strategies
-
-- **XEC Selection (`utxoStrategy`, `feeStrategy`)**:
-  - `all` (Default): Uses all available UTXOs. Keeps wallet clean.
-  - `minimal`: Uses fewest UTXOs to save on fees.
-- **Token Selection (`tokenStrategy`)**:
-  - `all` (Default): Uses all token UTXOs (merges them).
-  - `largest`: Picks the single largest token UTXO.
-  - `minimal`: Picks the single smallest sufficient token UTXO.
+| `utxoStrategy` | `UtxoStrategy` | XEC selection: `all`, `minimal`, `largest_first` | `all` |
+| `feeStrategy` | `FeeStrategy` | Fee selection: `all`, `minimal`, `largest_first` | `all` |
+| `tokenStrategy` | `TokenStrategy` | Token selection: `all` (merge), `largest`, `minimal` | `all` |
 
 ---
 
