@@ -1,7 +1,7 @@
 import { Address, Script, P2PKHSignatory, ALL_BIP143 } from 'ecash-lib';
 import { Utxo } from '../types';
 
-// 交易输入接口
+// Transaction input interface
 interface TransactionInput {
   input: {
     prevOut: {
@@ -17,12 +17,12 @@ interface TransactionInput {
 }
 
 /**
- * 构建交易输入 - 通用函数，支持单个或多个UTXO数组
- * @param utxos - 单个UTXO数组或多个UTXO数组
- * @param walletP2pkh - 钱包脚本
- * @param walletSk - 私钥
- * @param walletPk - 公钥
- * @returns 交易输入数组
+ * Build transaction inputs - general function supporting single or multiple UTXO arrays
+ * @param utxos - Single UTXO array or multiple UTXO arrays
+ * @param walletP2pkh - Wallet script
+ * @param walletSk - Private key
+ * @param walletPk - Public key
+ * @returns Transaction inputs array
  */
 export function buildTransactionInputs(
   utxos: Utxo[] | Utxo[][],
@@ -30,7 +30,7 @@ export function buildTransactionInputs(
   walletSk: Uint8Array,
   walletPk: Uint8Array
 ): TransactionInput[] {
-  // 如果传入的是多个数组（如SLP交易的tokenUtxos和feeUtxos），则合并
+  // If multiple arrays are passed (e.g., tokenUtxos and feeUtxos for SLP), flatten them
   const allUtxos: Utxo[] = Array.isArray(utxos[0]) ? (utxos as Utxo[][]).flat() : utxos as Utxo[];
   
   return allUtxos.map(utxo => ({
@@ -43,9 +43,9 @@ export function buildTransactionInputs(
 }
 
 /**
- * 创建P2PKH脚本
- * @param address - eCash地址
- * @returns P2PKH脚本
+ * Create P2PKH script
+ * @param address - eCash address
+ * @returns P2PKH script
  */
 export function createP2pkhScript(address: string): Script {
   try {

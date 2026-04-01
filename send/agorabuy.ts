@@ -23,8 +23,8 @@ import {
 const ecc = new Ecc();
 
 /**
- * Agora 协议使用的固定 covenant 密钥对
- * 这个密钥对不控制任何资金，只用于构建协议脚本
+ * Fixed covenant keypair for Agora protocol
+ * This keypair does not control funds; used only for protocol script construction
  */
 const DUMMY_KEYPAIR = {
     sk: fromHex('33'.repeat(32)),
@@ -32,7 +32,7 @@ const DUMMY_KEYPAIR = {
 };
 
 /**
- * 规范化 UTXO 字段，确保兼容 ecash-agora 的 bigint 要求
+ * Normalize UTXO fields to ensure compatibility with ecash-agora bigint requirements
  */
 function patchUtxoForAgora(utxo: any): any {
     if (!utxo) return utxo;
@@ -70,7 +70,7 @@ function patchUtxoForAgora(utxo: any): any {
 }
 
 /**
- * 安全地获取代币原子单位数量
+ * Safely get token atoms amount
  */
 function getTokenAtoms(token: any): bigint {
     if (!token) return 0n;
@@ -84,7 +84,7 @@ function getTokenAtoms(token: any): bigint {
 }
 
 /**
- * 包装 Chronik 客户端以自动规范化 UTXO 格式
+ * Wrap Chronik client to normalize UTXO format automatically
  */
 function createAgoraChronik(chronik: any): any {
     return {
@@ -119,7 +119,7 @@ function createAgoraChronik(chronik: any): any {
 }
 
 /**
- * 第一步：查询报价
+ * Step 1: Query offers
  */
 export async function fetchAgoraOffers(options: AgoraFetchOptions): Promise<AgoraOffer[]> {
     const { tokenId, maxPrice = 0, chronik = defaultChronik } = options;
@@ -161,7 +161,7 @@ export async function fetchAgoraOffers(options: AgoraFetchOptions): Promise<Agor
 }
 
 /**
- * 第二步：执行购买
+ * Step 2: Execute purchase
  */
 export async function acceptAgoraOffer(
     agoraOffer: AgoraOffer,
@@ -195,13 +195,13 @@ export async function acceptAgoraOffer(
                 acceptedAtoms = availableAtoms;
             }
 
-            // 调整为符合截断因子的有效数量
+            // Adjust amount to truncated factor
             acceptedAtoms = partial.prepareAcceptedAtoms(acceptedAtoms);
 
-            // 如果购买后剩余量太小，则尝试全买（如果总余额允许）
+            // If remainder is too small, try to buy all
             const remaining = availableAtoms - acceptedAtoms;
             if (remaining > 0n && remaining < minAccepted) {
-                // 自动调整为购买全部可用余额
+                // Auto-adjust to buy full balance
                 acceptedAtoms = availableAtoms;
             }
         } else {
@@ -218,7 +218,7 @@ export async function acceptAgoraOffer(
         const wallet = initializeWallet(addressIndex, mnemonic);
         const utxos = await getUtxos(wallet.address, chronik);
 
-        // 获取区块高度以检查 coinbase 成熟度
+        // Get block height to check coinbase maturity
         let tipHeight = 0;
         try {
             const info = await chronik.blockchainInfo();
@@ -304,8 +304,8 @@ export async function acceptAgoraOffer(
 }
 
 /**
- * 聚合购买：自动循环购买多个订单直到达到目标数量
- * 模式2：指定数量 + 最大价格，自动选择订单
+ * Aggregate buy: loop purchase multiple offers until target amount reached
+ * Mode 2: target amount + max price, auto-select offers
  */
 export async function buyAgoraTokens(options: AgoraBuyOptions): Promise<AgoraBuyAggregateResult> {
     const { tokenId, amount, maxPrice, addressIndex, mnemonic, chronik } = options;
@@ -316,7 +316,7 @@ export async function buyAgoraTokens(options: AgoraBuyOptions): Promise<AgoraBuy
     let skippedOffers = 0;
 
     try {
-        // 获取所有符合价格条件的订单
+        // Get all offers matching price criteria
         const offers = await fetchAgoraOffers({ tokenId, maxPrice, chronik });
 
         if (offers.length === 0) {
@@ -331,7 +331,7 @@ export async function buyAgoraTokens(options: AgoraBuyOptions): Promise<AgoraBuy
             };
         }
 
-        // 循环购买订单
+        // Loop purchase offers
         for (const offer of offers) {
             if (totalBought >= amount) break;
 

@@ -1,7 +1,7 @@
 import { mnemonicToSeed, HdNode, shaRmd160, Address } from 'ecash-lib';
 import * as wif from 'wif';
 
-// 派生密钥结果接口
+// Derived key result interface
 interface DerivedKey {
   wif: string;
   address: string;
@@ -10,41 +10,41 @@ interface DerivedKey {
 }
 
 /**
- * 从助记词派生出WIF格式的私钥和地址
- * @param mnemonic - 助记词
- * @param addressIndex - 地址索引，默认为0（第0个地址）
- * @param derivationPath - 派生路径基础部分，默认为 "m/44'/1899'/0'/0"
- * @returns 包含 wif 和 address 的对象
+ * Derive WIF private key and address from mnemonic
+ * @param mnemonic - Wallet mnemonic
+ * @param addressIndex - Address index (default 0)
+ * @param derivationPath - Base derivation path (default "m/44'/1899'/0'/0")
+ * @returns Object containing wif and address
  */
 export function deriveBuyerKey(
-  mnemonic: string, 
-  addressIndex: number = 0, 
+  mnemonic: string,
+  addressIndex: number = 0,
   derivationPath: string = "m/44'/1899'/0'/0"
 ): DerivedKey {
-  // 将助记词转换为种子
+  // Convert mnemonic to seed
   const seed = mnemonicToSeed(mnemonic);
-  
-  // 从种子生成根 HD 节点
+
+  // Generate root HD node from seed
   const hdRoot = HdNode.fromSeed(seed);
-  
-  // 构建完整的派生路径，包含地址索引
+
+  // Build full derivation path including index
   const fullDerivationPath = `${derivationPath}/${addressIndex}`;
-  
-  // 使用路径派生子节点
+
+  // Derive child node using path
   const childNode = hdRoot.derivePath(fullDerivationPath);
-  
-  // 获取公钥并创建 eCash 地址
+
+  // Get pubkey and create eCash address
   const pubkey = childNode.pubkey();
   const pubkeyHash = shaRmd160(pubkey);
   const ecashAddress = Address.p2pkh(pubkeyHash).toString();
-  
-  // 提取私钥缓冲区
+
+  // Extract private key buffer
   const privateKeyBuffer = childNode.seckey();
   if (!privateKeyBuffer) {
     throw new Error('Failed to derive private key: seckey() returned undefined');
   }
 
-  // 将私钥转换为 WIF (0x80 是比特币主网的前缀)
+  // Convert private key to WIF (0x80 is Bitcoin mainnet prefix)
   const buyerWIF = wif.encode({
     version: 0x80,
     privateKey: Buffer.from(privateKeyBuffer),
@@ -60,9 +60,9 @@ export function deriveBuyerKey(
 }
 
 /**
- * 验证助记词格式
- * @param mnemonic - 助记词
- * @returns 是否为有效助记词
+ * Validate mnemonic format
+ * @param mnemonic - Wallet mnemonic
+ * @returns Whether the mnemonic is valid
  */
 export function validateMnemonic(mnemonic: string | null | undefined): boolean {
   if (!mnemonic || typeof mnemonic !== 'string') {

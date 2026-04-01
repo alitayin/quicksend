@@ -2,16 +2,16 @@ import { ChronikClient } from "chronik-client";
 import { AgoraOffer as EcashAgoraOffer } from 'ecash-agora';
 
 /**
- * fetchAgoraOffers 的查询参数
+ * Query parameters for fetchAgoraOffers
  */
 export interface AgoraFetchOptions {
   tokenId: string;
-  maxPrice?: number;      // 每个代币最高 XEC 价格
+  maxPrice?: number;      // Max XEC price per token
   chronik?: ChronikClient;
 }
 
 /**
- * 单个报价
+ * Individual Agora offer
  */
 export interface AgoraOffer {
   offer: EcashAgoraOffer;
@@ -22,7 +22,7 @@ export interface AgoraOffer {
 }
 
 /**
- * acceptAgoraOffer 的执行参数
+ * Parameters for acceptAgoraOffer
  */
 export interface AgoraAcceptOptions {
   amount: bigint;
@@ -32,7 +32,7 @@ export interface AgoraAcceptOptions {
 }
 
 /**
- * Agora 购买执行结果
+ * Agora purchase result
  */
 export interface AgoraBuyResult {
   success: boolean;
@@ -48,7 +48,7 @@ export interface AgoraBuyResult {
 }
 
 /**
- * 聚合购买选项
+ * Aggregate purchase options
  */
 export interface AgoraBuyOptions {
   tokenId: string;
@@ -60,7 +60,7 @@ export interface AgoraBuyOptions {
 }
 
 /**
- * 聚合购买结果
+ * Aggregate purchase result
  */
 export interface AgoraBuyAggregateResult {
   success: boolean;
@@ -78,7 +78,7 @@ export interface AgoraBuyAggregateResult {
 }
 
 /**
- * createAgoraOffer 的执行参数
+ * Parameters for createAgoraOffer
  */
 export interface AgoraSellOptions {
   tokenId: string;
@@ -91,7 +91,7 @@ export interface AgoraSellOptions {
 }
 
 /**
- * Agora 卖单创建结果
+ * Agora sell offer creation result
  */
 export interface AgoraSellResult {
   success: boolean;
@@ -104,7 +104,7 @@ export interface AgoraSellResult {
 }
 
 /**
- * fetchMyAgoraOffers 的执行参数
+ * Parameters for fetchMyAgoraOffers
  */
 export interface AgoraMyOffersOptions {
   addressIndex?: number;
@@ -113,7 +113,7 @@ export interface AgoraMyOffersOptions {
 }
 
 /**
- * cancelAgoraOffer 的执行参数
+ * Parameters for cancelAgoraOffer
  */
 export interface AgoraCancelOptions {
   addressIndex?: number;
@@ -122,7 +122,7 @@ export interface AgoraCancelOptions {
 }
 
 /**
- * Agora 取消订单结果
+ * Agora cancel offer result
  */
 export interface AgoraCancelResult {
   success: boolean;
@@ -132,7 +132,7 @@ export interface AgoraCancelResult {
 }
 
 /**
- * 交易接收方
+ * Transaction recipient
  */
 export interface Recipient {
   address: string;
@@ -140,7 +140,7 @@ export interface Recipient {
 }
 
 /**
- * UTXO 接口定义
+ * UTXO interface definition
  */
 export interface Utxo {
   txid: string;
@@ -154,7 +154,7 @@ export interface Utxo {
 }
 
 /**
- * SLP 代币信息接口
+ * SLP token information interface
  */
 export interface SlpToken {
   tokenId: string;
@@ -163,7 +163,7 @@ export interface SlpToken {
 }
 
 /**
- * 交易结果
+ * Transaction result
  */
 export interface TransactionResult {
   txid: string;
@@ -173,7 +173,7 @@ export interface TransactionResult {
 }
 
 /**
- * SLP/ALP 代币交易选项
+ * SLP/ALP token transaction options
  */
 export interface TokenTransactionOptions {
   tokenId: string;
@@ -185,7 +185,7 @@ export interface TokenTransactionOptions {
 }
 
 /**
- * XEC 交易选项
+ * XEC transaction options
  */
 export interface XecTransactionOptions {
   utxoStrategy?: UtxoStrategy;
@@ -195,7 +195,7 @@ export interface XecTransactionOptions {
 }
 
 /**
- * 通用发送方法的选项
+ * General send method options
  */
 export interface GeneralSendOptions {
   utxoStrategy?: UtxoStrategy;
@@ -208,21 +208,21 @@ export interface GeneralSendOptions {
 }
 
 /**
- * 交易类型
+ * Transaction type
  */
 export type TransactionType = 'slp' | 'alp' | 'xec';
 
 /**
- * UTXO选择策略类型
+ * UTXO selection strategy type
  */
 export type UtxoStrategy = 'all' | 'minimal' | 'largest_first';
 
 /**
- * 手续费UTXO选择策略类型
+ * Fee UTXO selection strategy type
  */
 export type FeeStrategy = 'all' | 'minimal' | 'largest_first';
 
 /**
- * 代币UTXO选择策略类型
+ * Token UTXO selection strategy type
  */
 export type TokenStrategy = 'largest' | 'minimal' | 'all';

@@ -11,8 +11,8 @@ import * as wif from 'wif';
 import { deriveBuyerKey } from '../wallet/mnemonic-utils';
 
 /**
- * 创建 Agora 卖单（挂单）
- * 使用 ecash-wallet 和 AgoraPartial.list 方法
+ * Create Agora sell offer (listing)
+ * Uses ecash-wallet and AgoraPartial.list methods
  */
 export async function createAgoraOffer(
     options: AgoraSellOptions
@@ -33,20 +33,20 @@ export async function createAgoraOffer(
             throw new Error('Mnemonic not set');
         }
 
-        // 1. 获取私钥 (绕过 normalize 报错)
+        // 1. Get private key
         const derived = deriveBuyerKey(finalMnemonic, addressIndex);
         const decoded = wif.decode(derived.wif);
         const walletSk = decoded.privateKey;
 
-        // 2. 正确初始化 Wallet 实例
-        // 构造函数签名: constructor(sk, chronik, baseHdNode?, accountNumber?, prefix?)
+        // 2. Initialize Wallet instance
+        // Constructor: constructor(sk, chronik, baseHdNode?, accountNumber?, prefix?)
         // @ts-ignore
         const wallet = new Wallet(walletSk, chronik as ChronikClient);
 
-        // 3. 同步数据
+        // 3. Sync data
         await wallet.sync();
 
-        // 4. 准备价格参数
+        // 4. Prepare price parameters
         // pricePerToken is XEC per token. 1 token = 1 atom now in this simplified logic?
         // No, pricePerToken is usually per 1 whole token (which might be 10^decimals atoms).
         // The user said they want to remove decimals, so 1 token is now defined by the user as some amount of atoms.
@@ -57,7 +57,7 @@ export async function createAgoraOffer(
         let result;
 
         if (offerType === 'PARTIAL') {
-            // 5. 使用 agora.selectParams
+            // 5. Use agora.selectParams
             // @ts-ignore
             const agora = new Agora(chronik as ChronikClient);
             const partial = await agora.selectParams({
@@ -70,7 +70,7 @@ export async function createAgoraOffer(
                 tokenType: 0
             });
 
-            // 6. 执行挂单
+            // 6. Execute listing
             result = await partial.list({
                 wallet,
                 feePerKb: 1000n

@@ -26,7 +26,7 @@ const {
 } = ecashLib;
 
 /**
- * 构建代币交易输出（SLP/ALP 共用）
+ * Build token transaction outputs (SLP/ALP common)
  */
 function buildTokenOutputs(
   opReturnScript: any,
@@ -90,7 +90,7 @@ function buildAlpOutputs(
 
 
 /**
- * 创建代币交易的通用函数
+ * General function to create token transactions
  */
 async function createTokenTransaction(
   recipients: Recipient[], 
@@ -98,12 +98,12 @@ async function createTokenTransaction(
   tokenType: 'SLP' | 'ALP' = 'SLP'
 ): Promise<TransactionResult> {
   try {
-    // 验证必需参数
+    // Validate required parameters
     validateRequiredParams(options, [
       { key: 'tokenId', message: 'tokenId is required' },
     ]);
 
-    // 验证接收方数量不超过协议上限
+    // Validate recipient count limit
     const maxOutputs = tokenType === 'SLP' ? SLP_MAX_SEND_OUTPUTS : ALP_POLICY_MAX_OUTPUTS;
     if (recipients.length > maxOutputs) {
       throw new Error(
@@ -116,23 +116,20 @@ async function createTokenTransaction(
       addressIndex = 0,
       feeStrategy = 'all',
       tokenStrategy = 'all',
-      mnemonic, // 从选项中提取助记词
-      chronik: chronikClient // 新增：从选项中提取chronik客户端
-    } = options;
+      mnemonic,       chronik: chronikClient     } = options;
 
     if (!/^[0-9a-f]{64}$/.test(tokenId)) {
       throw new Error(`Invalid tokenId: must be a 64-character lowercase hex string, got "${tokenId}"`);
     }
 
-    // 初始化钱包 - 使用指定的地址索引和可选的助记词
+    // Initialize wallet
     const { walletSk, walletPk, walletP2pkh, address: utxoAddress } = initializeWallet(addressIndex, mnemonic);
     
-    const utxos = await getUtxos(utxoAddress, chronikClient); // 传递chronik客户端
-    if (utxos.length === 0) {
+    const utxos = await getUtxos(utxoAddress, chronikClient);     if (utxos.length === 0) {
       throw new Error(`No UTXOs found for address index ${addressIndex}`);
     }
 
-    // 选择代币UTXOs
+    // Select token UTXOs
     const tokenSelection = selectSlpUtxos(utxos, tokenId, recipients, {
       feeStrategy,
       tokenStrategy
@@ -147,9 +144,9 @@ async function createTokenTransaction(
       summary
     } = tokenSelection;
 
-    // 构建交易输入和输出
+    // Build transaction inputs and outputs
     const inputs = buildTransactionInputs([selectedTokenUtxos, selectedFeeUtxos], walletP2pkh, walletSk, walletPk);
-    
+
     let outputs: any[];
     if (tokenType === 'ALP') {
       outputs = buildAlpOutputs(tokenId, finalSendAmounts, recipients, tokenChange, dustLimit, walletP2pkh);
@@ -157,10 +154,10 @@ async function createTokenTransaction(
       outputs = buildSlpOutputs(tokenId, finalSendAmounts, recipients, tokenChange, dustLimit, walletP2pkh);
     }
 
-    // 用 EccDummy 验证输入能覆盖输出 + 真实手续费（保守上界）
+    // Verify fee with EccDummy
     verifyFee([...selectedTokenUtxos, ...selectedFeeUtxos], outputs);
 
-    // 构建并广播交易
+    // Build and broadcast transaction
     return await buildAndBroadcastTransaction(inputs, outputs, { dustLimit, chronik: chronikClient });
 
   } catch (error) {
@@ -170,14 +167,14 @@ async function createTokenTransaction(
 }
 
 /**
- * 创建SLP代币交易
+ * Create SLP token transaction
  */
 export async function createRawSlpTransaction(recipients: Recipient[], options: TokenTransactionOptions): Promise<TransactionResult> {
   return createTokenTransaction(recipients, options, 'SLP');
 }
 
 /**
- * 创建ALP代币交易
+ * Create ALP token transaction
  */
 export async function createRawAlpTransaction(recipients: Recipient[], options: TokenTransactionOptions): Promise<TransactionResult> {
   return createTokenTransaction(recipients, options, 'ALP');

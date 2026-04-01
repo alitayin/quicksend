@@ -24,32 +24,32 @@ import {
 } from './types';
 
 /**
- * 统一交易管理器
- * 支持 SLP、ALP 和 XEC 交易类型
+ * Unified Transaction Manager
+ * Supports SLP, ALP and XEC transaction types
  */
 class TransactionManager {
   /**
-   * 发送 SLP 代币
-   * @param recipients - 接收方数组
-   * @param options - 交易选项（可包含助记词和chronik实例）
+   * Send SLP tokens
+   * @param recipients - Array of recipients
+   * @param options - Transaction options (mnemonic, chronik instance, etc.)
    */
   async sendSlp(recipients: Recipient[], options: TokenTransactionOptions): Promise<TransactionResult> {
     return await createRawSlpTransaction(recipients, options);
   }
 
   /**
-   * 发送 ALP 代币
-   * @param recipients - 接收方数组
-   * @param options - 交易选项（可包含助记词和chronik实例）
+   * Send ALP tokens
+   * @param recipients - Array of recipients
+   * @param options - Transaction options (mnemonic, chronik instance, etc.)
    */
   async sendAlp(recipients: Recipient[], options: TokenTransactionOptions): Promise<TransactionResult> {
     return await createRawAlpTransaction(recipients, options);
   }
 
   /**
-   * 发送 XEC (eCash)
-   * @param recipients - 接收方数组
-   * @param options - UTXO选择策略字符串或包含utxoStrategy、addressIndex、mnemonic和chronik的选项对象
+   * Send XEC (eCash)
+   * @param recipients - Array of recipients
+   * @param options - UTXO strategy or options including mnemonic and chronik
    */
   async sendXec(recipients: Recipient[], options: XecTransactionOptions = {}): Promise<TransactionResult> {
     const { utxoStrategy = 'all', addressIndex = 0, mnemonic, chronik: chronikClient } = options;
@@ -57,60 +57,60 @@ class TransactionManager {
   }
 
   /**
-   * 查询 Agora 报价列表
-   * @param options - 查询参数
+   * Fetch Agora offers
+   * @param options - Fetch parameters
    */
   async fetchAgoraOffers(options: AgoraFetchOptions): Promise<AgoraOffer[]> {
     return await _fetchAgoraOffers(options);
   }
 
   /**
-   * 执行 Agora 成交购买（单笔模式）
-   * @param offer - fetchAgoraOffers 返回的报价对象
-   * @param options - 购买选项
+   * Accept an Agora offer (single mode)
+   * @param offer - Offer object from fetchAgoraOffers
+   * @param options - Purchase options
    */
   async acceptAgoraOffer(offer: AgoraOffer, options: AgoraAcceptOptions): Promise<AgoraBuyResult> {
     return await _acceptAgoraOffer(offer, options);
   }
 
   /**
-   * 聚合购买 Agora 代币（自动循环多个订单）
-   * @param options - 购买选项（指定数量和最大价格）
+   * Aggregate purchase Agora tokens (auto-loop multiple offers)
+   * @param options - Purchase options (amount and max price)
    */
   async buyAgoraTokens(options: AgoraBuyOptions): Promise<AgoraBuyAggregateResult> {
     return await _buyAgoraTokens(options);
   }
 
   /**
-   * 创建 Agora 卖单（挂单）
-   * @param options - 挂单选项
+   * Create an Agora sell offer (listing)
+   * @param options - Sell options
    */
   async createAgoraOffer(options: AgoraSellOptions): Promise<AgoraSellResult> {
     return await _createAgoraOffer(options);
   }
 
   /**
-   * 查询我挂出的活跃 Agora 订单
-   * @param options - 查询选项
+   * Fetch my active Agora offers
+   * @param options - Query options
    */
   async fetchMyAgoraOffers(options: AgoraMyOffersOptions): Promise<AgoraOffer[]> {
     return await _fetchMyAgoraOffers(options);
   }
 
   /**
-   * 取消指定的 Agora 订单
-   * @param offer - fetchMyAgoraOffers 返回的订单对象
-   * @param options - 取消选项
+   * Cancel a specific Agora offer
+   * @param offer - Offer object from fetchMyAgoraOffers
+   * @param options - Cancel options
    */
   async cancelAgoraOffer(offer: AgoraOffer, options: AgoraCancelOptions): Promise<AgoraCancelResult> {
     return await _cancelAgoraOffer(offer, options);
   }
 
   /**
-   * 通用发送方法
-   * @param type - 交易类型
-   * @param recipients - 接收方数组
-   * @param options - 交易选项（可包含助记词和chronik实例）
+   * General send method
+   * @param type - Transaction type
+   * @param recipients - Array of recipients
+   * @param options - Transaction options (mnemonic, chronik, etc.)
    */
   async send(type: TransactionType, recipients: Recipient[], options: GeneralSendOptions = {}): Promise<TransactionResult> {
     switch (type.toLowerCase() as TransactionType) {
@@ -124,7 +124,7 @@ class TransactionManager {
           feeStrategy: options.feeStrategy,
           tokenStrategy: options.tokenStrategy,
           mnemonic: options.mnemonic,
-          chronik: options.chronik // 传递chronik客户端
+          chronik: options.chronik
         });
       case 'alp':
         if (!options.tokenId) {
@@ -136,15 +136,14 @@ class TransactionManager {
           feeStrategy: options.feeStrategy,
           tokenStrategy: options.tokenStrategy,
           mnemonic: options.mnemonic,
-          chronik: options.chronik // 传递chronik客户端
+          chronik: options.chronik
         });
       case 'xec':
         const xecOptions: XecTransactionOptions = {
           utxoStrategy: options.utxoStrategy,
           addressIndex: options.addressIndex,
           mnemonic: options.mnemonic,
-          chronik: options.chronik // 传递chronik客户端
-        };
+          chronik: options.chronik         };
         return await this.sendXec(recipients, xecOptions);
       default:
         throw new Error(`Unsupported transaction type: ${type}`);
@@ -152,12 +151,12 @@ class TransactionManager {
   }
 }
 
-// 创建单例实例
+// Create singleton instance
 const quick = new TransactionManager();
 
-// 导出实例和类
+// Export instance and class
 export default quick;
 export { TransactionManager };
 
-// 便捷方法导出
+// Convenience method exports
 export const { sendSlp, sendAlp, sendXec, send, fetchAgoraOffers, acceptAgoraOffer, buyAgoraTokens, createAgoraOffer, fetchMyAgoraOffers, cancelAgoraOffer } = quick;

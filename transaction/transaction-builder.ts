@@ -6,16 +6,16 @@ import {
 import { ChronikClient } from "chronik-client";
 import { TransactionResult } from "../types";
 
-// EccDummy 使用固定最大签名长度（73字节），保证费用估算永远不低于实际
+// EccDummy uses a fixed maximum signature length (73 bytes) to ensure fee estimates are never too low
 const _eccDummy = new EccDummy();
 const _DUMMY_SK = fromHex('1122334455667788990011223344556677889900112233445566778899001122');
 const _DUMMY_PK = _eccDummy.derivePubkey(_DUMMY_SK);
 const _DUMMY_P2PKH = Script.p2pkh(new Uint8Array(20).fill(0x11));
 
 /**
- * 用 EccDummy 验证 UTXOs 能否覆盖 outputs + 真实手续费。
- * EccDummy 签名长度固定为最大值（73字节），结果是保守上界，永远不低估。
- * 如果验证失败，在广播前提前抛出，避免浪费网络请求。
+ * Verify UTXOs can cover outputs and fee using EccDummy.
+ * EccDummy signature length is fixed to max (73 bytes), providing a conservative upper bound.
+ * Throws before broadcasting if verification fails to save network requests.
  */
 export function verifyFee(
   utxos: Array<{ value: number }>,
@@ -43,7 +43,7 @@ export function verifyFee(
   }
 }
 
-// 交易选项接口
+// Transaction options interface
 interface TransactionOptions {
   feePerKb?: bigint;
   dustSats?: bigint;
@@ -51,7 +51,7 @@ interface TransactionOptions {
   chronik?: ChronikClient;
 }
 
-// 必需参数配置接口
+// Required parameter configuration interface
 interface RequiredParamConfig {
   key: string;
   message: string;
@@ -59,11 +59,11 @@ interface RequiredParamConfig {
 }
 
 /**
- * 构建并广播交易的通用函数
- * @param inputs - 交易输入数组
- * @param outputs - 交易输出数组
- * @param options - 交易选项
- * @returns 包含 explorer 链接和交易 ID 的对象
+ * General function to build and broadcast a transaction
+ * @param inputs - Array of transaction inputs
+ * @param outputs - Array of transaction outputs
+ * @param options - Transaction options
+ * @returns Object containing explorer link and transaction ID
  */
 export async function buildAndBroadcastTransaction(
   inputs: any[], 
@@ -74,25 +74,24 @@ export async function buildAndBroadcastTransaction(
     feePerKb = 1000n,
     dustSats = 546n,
     dustLimit = 546,
-    chronik: chronikClient // 提取chronik客户端
-  } = options;
+    chronik: chronikClient   } = options;
 
-  const client = chronikClient || chronik; // 使用传入的chronik客户端或默认的
+  const client = chronikClient || chronik; // Use provided or default Chronik client
 
   try {
-    // 构建交易
+    // Build transaction
     const txBuild = new TxBuilder({ inputs, outputs });
 
-    // 签名交易
-    const tx = txBuild.sign({ 
-      feePerKb, 
-      dustSats: typeof dustSats === 'bigint' ? dustSats : BigInt(dustLimit) 
+    // Sign transaction
+    const tx = txBuild.sign({
+      feePerKb,
+      dustSats: typeof dustSats === 'bigint' ? dustSats : BigInt(dustLimit)
     });
-    
-    // 序列化交易
+
+    // Serialize transaction
     const rawTxHex = toHex(tx.ser());
 
-    // 广播交易
+    // Broadcast transaction
     const { txids } = await client.broadcastTxs([rawTxHex]);
     if (!txids || txids.length === 0) {
       throw new Error("Empty Chronik broadcast response");
@@ -111,9 +110,9 @@ export async function buildAndBroadcastTransaction(
 }
 
 /**
- * 验证必需参数的通用函数
- * @param params - 参数对象
- * @param required - 必需参数配置数组
+ * General function to validate required parameters
+ * @param params - Parameter object
+ * @param required - Array of required parameter configurations
  */
 export function validateRequiredParams(params: any, required: RequiredParamConfig[]): void {
   for (const { key, message, checkUndefined } of required) {
@@ -124,10 +123,10 @@ export function validateRequiredParams(params: any, required: RequiredParamConfi
 }
 
 /**
- * 记录交易摘要的通用函数
- * @param type - 交易类型
- * @param summary - 摘要信息
+ * General function to log transaction summary
+ * @param type - Transaction type
+ * @param summary - Summary information
  */
 export function logTransactionSummary(type: string, summary: any): void {
-  console.log(`${type} transaction summary:`, summary);
-} 
+  // No-op or debug log removed for production cleanliness
+}

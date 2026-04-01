@@ -1,6 +1,6 @@
 import { ChronikClient } from "chronik-client";
 
-// 定义多个Chronik节点
+// Define multiple Chronik nodes
 const chronikUrls: string[] = [
     'https://chronik-native2.fabien.cash',
     'https://chronik-native3.fabien.cash',
@@ -10,7 +10,7 @@ const chronikUrls: string[] = [
     'https://chronik2.alitayin.com',
 ];
 
-// 创建共享的Chronik客户端实例，支持多个节点
+// Create shared ChronikClient instance supporting multiple nodes
 const chronik: ChronikClient = new ChronikClient(chronikUrls);
 
 export { chronik }; 

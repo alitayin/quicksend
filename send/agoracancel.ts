@@ -14,7 +14,7 @@ import * as wif from 'wif';
 import { deriveBuyerKey } from '../wallet/mnemonic-utils';
 
 /**
- * 获取我当前挂出的所有活跃订单
+ * Fetch all active offers listed by current user
  */
 export async function fetchMyAgoraOffers(options: AgoraMyOffersOptions): Promise<WrappedAgoraOffer[]> {
     const { addressIndex = 0, mnemonic, chronik = defaultChronik } = options;
@@ -24,16 +24,16 @@ export async function fetchMyAgoraOffers(options: AgoraMyOffersOptions): Promise
         throw new Error('Mnemonic not set');
     }
 
-    // 1. 获取钱包公钥
+    // 1. Get wallet pubkey
     const walletInfo = initializeWallet(addressIndex, finalMnemonic);
     const pubkeyHex = Buffer.from(walletInfo.walletPk).toString('hex');
 
-    // 2. 查询节点
+    // 2. Query node
     // @ts-ignore
     const agora = new Agora(chronik as ChronikClient);
     const offers = await agora.activeOffersByPubKey(pubkeyHex);
 
-    // 3. 转换为项目统一的 WrappedAgoraOffer 格式
+    // 3. Convert to project-unified WrappedAgoraOffer format
     return offers.map(offer => {
         let totalAtoms: bigint;
         let totalSats: bigint;
@@ -65,7 +65,7 @@ export async function fetchMyAgoraOffers(options: AgoraMyOffersOptions): Promise
 }
 
 /**
- * 取消订单
+ * Cancel an Agora offer
  */
 export async function cancelAgoraOffer(
     agoraOffer: WrappedAgoraOffer,
@@ -79,17 +79,17 @@ export async function cancelAgoraOffer(
             throw new Error('Mnemonic not set');
         }
 
-        // 1. 获取私钥信息 (绕过 ecash-lib 助记词 normalize 报错)
+        // 1. Get private key info
         const derived = deriveBuyerKey(finalMnemonic, addressIndex);
         const decoded = wif.decode(derived.wif);
         const walletSk = decoded.privateKey;
 
-        // 2. 正确初始化 Wallet 实例
+        // 2. Initialize Wallet instance
         // @ts-ignore
         const wallet = new Wallet(walletSk, chronik as ChronikClient);
         await wallet.sync();
 
-        // 3. 执行取消
+        // 3. Execute cancellation
         const offer = agoraOffer.offer;
         const result = await offer.cancel({
             wallet,

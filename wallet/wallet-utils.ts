@@ -3,10 +3,10 @@ import { deriveBuyerKey } from './mnemonic-utils';
 import * as wif from 'wif';
 import { Ecc, Script, fromHex, shaRmd160 } from 'ecash-lib';
 
-// 模块级单例，避免每次调用都重新初始化 Ecc
+// Module-level singleton to avoid re-initializing Ecc
 const ecc = new Ecc();
 
-// 钱包信息接口
+// Wallet information interface
 interface WalletInfo {
   ecc: Ecc;
   walletSk: Uint8Array;
@@ -18,20 +18,19 @@ interface WalletInfo {
 }
 
 /**
- * 初始化钱包 - 优化版本，只调用一次 deriveBuyerKey
- * @param addressIndex - 地址索引，默认为0
- * @param mnemonic - 可选：直接提供助记词，否则从环境变量获取
- * @returns 钱包相关的密钥、脚本和地址
+ * Initialize wallet - optimized version, calls deriveBuyerKey once
+ * @param addressIndex - Address index (default 0)
+ * @param mnemonic - Optional mnemonic; if not provided, uses environment variable
+ * @returns Wallet keys, scripts, and address
  */
 export function initializeWallet(addressIndex: number = 0, mnemonic?: string): WalletInfo {
-  // 如果提供了助记词参数就使用，否则从环境变量获取
   const finalMnemonic = mnemonic || getMnemonic();
-  
+
   if (!finalMnemonic) {
     throw new Error('Mnemonic not set: please set the MNEMONIC environment variable or provide it as a parameter');
   }
-  
-  // 只调用一次 deriveBuyerKey，获取完整信息
+
+  // Call deriveBuyerKey once to get full info
   const derived = deriveBuyerKey(finalMnemonic, addressIndex);
   
   const decoded = wif.decode(derived.wif);
@@ -48,7 +47,7 @@ export function initializeWallet(addressIndex: number = 0, mnemonic?: string): W
     walletPk,
     walletPkh,
     walletP2pkh,
-    address: derived.address,  // 新增：返回地址信息
+    address: derived.address,
     addressIndex
   };
 } 

@@ -3,18 +3,18 @@ import { chronik } from '../client/chronik-client';
 import { Utxo, SlpToken, Recipient, UtxoStrategy, FeeStrategy, TokenStrategy } from '../types';
 import { ChronikClient } from 'chronik-client';
 
-// P2PKH 交易字节大小常量
+// P2PKH transaction byte size constants
 const P2PKH_INPUT_BYTES = 148;  // txid(32) + vout(4) + scriptLen(1) + sig(72) + pubkey(33) + sequence(4) + varint(2)
 const P2PKH_OUTPUT_BYTES = 34; // value(8) + scriptLen(1) + script(25)
 const TX_OVERHEAD_BYTES = 10;  // version(4) + locktime(4) + input/output count varints
 
-/** 根据输入数和输出数估算交易手续费（satoshis） */
+/** Estimate transaction fee (satoshis) based on input and output counts */
 function estimateFee(nInputs: number, nOutputs: number): number {
   const txBytes = nInputs * P2PKH_INPUT_BYTES + nOutputs * P2PKH_OUTPUT_BYTES + TX_OVERHEAD_BYTES;
   return Number(calcTxFee(txBytes, DEFAULT_FEE_SATS_PER_KB));
 }
 
-// UTXO选择结果接口
+// UTXO selection result interface
 interface UtxoSelection {
   selectedUtxos: Utxo[];
   totalInputValue: number;
@@ -23,14 +23,14 @@ interface UtxoSelection {
   utxoCount: number;
 }
 
-// SLP UTXO选择选项接口
+// SLP UTXO selection options interface
 interface SlpUtxoOptions {
   dustLimit?: number;
   feeStrategy?: FeeStrategy;
   tokenStrategy?: TokenStrategy;
 }
 
-// SLP UTXO选择结果接口
+// SLP UTXO selection result interface
 interface SlpUtxoSelection {
   selectedTokenUtxos: Utxo[];
   selectedFeeUtxos: Utxo[];
@@ -51,7 +51,7 @@ interface SlpUtxoSelection {
   };
 }
 
-// 代币余额信息接口
+// Token balance info interface
 interface TokenBalance {
   tokenId: string;
   totalTokens: bigint;
@@ -59,7 +59,7 @@ interface TokenBalance {
   utxos: Utxo[];
 }
 
-// 地址余额信息接口
+// Address balance info interface
 interface AddressBalance {
   totalBalance: number;
   utxoCount: number;
@@ -69,7 +69,7 @@ interface AddressBalance {
   tokenBalances: TokenBalance[];
 }
 
-// UtxoStrategy 从 types.ts 导入
+// UtxoStrategy imported from types.ts
 
 /**
  * Get UTXOs for a given address
@@ -79,7 +79,7 @@ interface AddressBalance {
  */
 async function getUtxos(address: string, chronikClient?: ChronikClient): Promise<Utxo[]> {
   const { type, hash } = Address.fromCashAddress(address);
-  const client = chronikClient || chronik; // 使用传入的chronik客户端或默认的
+  const client = chronikClient || chronik;
   
   try {
     const utxosResponse = await client.script(type, hash).utxos();
@@ -108,14 +108,14 @@ async function getUtxos(address: string, chronikClient?: ChronikClient): Promise
 }
 
 /**
- * 选择合适的UTXOs用于普通XEC交易
- * @param utxos - 所有可用的UTXOs
- * @param sendAmount - 要发送的金额
- * @param strategy - 选择策略
- * @returns 包含选择的UTXOs和相关信息
+ * Select suitable UTXOs for basic XEC transaction
+ * @param utxos - All available UTXOs
+ * @param sendAmount - Amount to send
+ * @param strategy - Selection strategy
+ * @returns Selected UTXOs and related info
  */
 function selectUtxos(utxos: Utxo[], sendAmount: number, strategy: UtxoStrategy = 'all'): UtxoSelection {
-  // 过滤掉SLP代币UTXOs和coinbase UTXOs（coinbase需要100个区块成熟才能花费）
+  // Filter SLP tokens and immature coinbase UTXOs
   const nonSlpUtxos = utxos.filter(utxo => !utxo.slpToken && !utxo.isCoinbase);
   
   if (nonSlpUtxos.length === 0) {
@@ -126,20 +126,20 @@ function selectUtxos(utxos: Utxo[], sendAmount: number, strategy: UtxoStrategy =
   
   switch (strategy) {
     case 'all':
-      // 使用所有非SLP UTXOs，避免产生碎片
+      // Use all non-SLP UTXOs to avoid fragmentation
       selectedUtxos = nonSlpUtxos;
       break;
       
     case 'minimal':
-      // 选择最少数量的UTXOs来满足金额需求
-      const sortedUtxos = [...nonSlpUtxos].sort((a, b) => b.value - a.value); // 从大到小排序
+      // Select minimal UTXOs to satisfy amount
+      const sortedUtxos = [...nonSlpUtxos].sort((a, b) => b.value - a.value); // Sort descending
       let accumulatedValue = 0;
       
       for (const utxo of sortedUtxos) {
         selectedUtxos.push(utxo);
         accumulatedValue += utxo.value;
         
-        // 估算手续费：inputs + 2 outputs（接收方 + 找零）
+        // Estimate fee: inputs + 2 outputs (recipient + change)
         const estimatedFee = estimateFee(selectedUtxos.length, 2);
         
         if (accumulatedValue >= sendAmount + estimatedFee) {
@@ -149,7 +149,7 @@ function selectUtxos(utxos: Utxo[], sendAmount: number, strategy: UtxoStrategy =
       break;
       
     case 'largest_first':
-      // 优先选择最大的UTXOs
+      // Select largest UTXOs first
       selectedUtxos = [...nonSlpUtxos].sort((a, b) => b.value - a.value);
       break;
       
@@ -160,7 +160,7 @@ function selectUtxos(utxos: Utxo[], sendAmount: number, strategy: UtxoStrategy =
   const totalInputValue = selectedUtxos.reduce((sum, utxo) => sum + utxo.value, 0);
   const estimatedFee = estimateFee(selectedUtxos.length, 2);
   
-  // 检查余额是否足够
+  // Check if balance is sufficient
   if (totalInputValue < sendAmount + estimatedFee) {
     throw new Error(
       `Insufficient balance. Total input: ${totalInputValue}, required: ${sendAmount + estimatedFee} (including estimated fee ${estimatedFee})`
@@ -177,12 +177,12 @@ function selectUtxos(utxos: Utxo[], sendAmount: number, strategy: UtxoStrategy =
 }
 
 /**
- * 为SLP交易选择UTXOs
- * @param utxos - 所有可用的UTXOs
- * @param tokenId - SLP代币ID
- * @param recipients - 接收方数组，包含address和amount
- * @param options - 选项
- * @returns 包含选择的UTXOs和相关信息
+ * Select UTXOs for SLP/ALP transaction
+ * @param utxos - All available UTXOs
+ * @param tokenId - Token ID
+ * @param recipients - Array of recipients
+ * @param options - Selection options
+ * @returns Selected UTXOs and related info
  */
 function selectSlpUtxos(
   utxos: Utxo[],
@@ -192,17 +192,17 @@ function selectSlpUtxos(
 ): SlpUtxoSelection {
   const {
     dustLimit = 546,
-    feeStrategy = 'all', // 手续费UTXO选择策略
-    tokenStrategy = 'largest' // 代币UTXO选择策略
+    feeStrategy = 'all',
+    tokenStrategy = 'largest'
   } = options;
 
-  // 分离SLP和非SLP UTXOs
+  // Separate SLP and non-SLP UTXOs
   const slpUtxos = utxos.filter(utxo =>
     utxo.slpToken &&
     utxo.slpToken.tokenId === tokenId &&
     !utxo.slpToken.isMintBaton // never spend mint batons as regular send inputs
   );
-  // 过滤掉coinbase UTXOs作为手续费输入（coinbase需100个区块成熟才能花费）
+  // Filter immature coinbase UTXOs
   const nonSlpUtxos = utxos.filter(utxo => !utxo.slpToken && !utxo.isCoinbase);
 
   if (slpUtxos.length === 0) {
@@ -212,20 +212,20 @@ function selectSlpUtxos(
     throw new Error('No non-SLP UTXOs available for fee payment');
   }
 
-  // 计算需要发送的代币总量（直接使用基础单位，不进行小数转换）
+  // Calculate total tokens to send (using base units)
   const sendAmounts = recipients.map(r => BigInt(r.amount));
   const totalSendTokens = sendAmounts.reduce((acc, val) => acc + val, 0n);
 
-  // 选择代币UTXOs
+  // Select token UTXOs
   let selectedTokenUtxos: Utxo[] = [];
   let totalTokens = 0n;
 
   if (tokenStrategy === 'all') {
-    // 选择所有相同代币ID的SLP UTXOs，减少UTXO碎片
+    // Select all UTXOs for the same token ID to reduce fragmentation
     selectedTokenUtxos = slpUtxos;
     totalTokens = slpUtxos.reduce((sum, utxo) => sum + BigInt(utxo.slpToken!.atoms), 0n);
   } else if (tokenStrategy === 'largest') {
-    // 选择最大的SLP UTXO
+    // Select largest SLP UTXO
     const selectedTokenUtxo = slpUtxos.reduce((max, current) => {
       const currentAmount = BigInt(current.slpToken!.atoms);
       const maxAmount = BigInt(max.slpToken!.atoms);
@@ -234,7 +234,7 @@ function selectSlpUtxos(
     selectedTokenUtxos = [selectedTokenUtxo];
     totalTokens = BigInt(selectedTokenUtxo.slpToken!.atoms);
   } else if (tokenStrategy === 'minimal') {
-    // 选择刚好够用的最小UTXO
+    // Select smallest sufficient UTXO
     const sortedSlpUtxos = slpUtxos
       .filter(utxo => BigInt(utxo.slpToken!.atoms) >= totalSendTokens)
       .sort((a, b) => {
@@ -256,23 +256,23 @@ function selectSlpUtxos(
 
   const tokenChange = totalTokens - totalSendTokens;
 
-  // 选择手续费UTXOs
+  // Select fee UTXOs
   let selectedFeeUtxos: Utxo[];
   if (feeStrategy === 'all') {
     selectedFeeUtxos = nonSlpUtxos;
   } else {
-    // 使用普通UTXO选择逻辑来选择手续费UTXOs
-    const requiredSats = recipients.length * dustLimit + (tokenChange > 0n ? dustLimit : 0) + 500; // 预估需要的sats
+    // Use basic UTXO selection logic for fee UTXOs
+    const requiredSats = recipients.length * dustLimit + (tokenChange > 0n ? dustLimit : 0) + 500; // Estimated sats required
     const feeSelection = selectUtxos(utxos, requiredSats, feeStrategy);
     selectedFeeUtxos = feeSelection.selectedUtxos;
   }
 
   const totalFeeInputValue = selectedFeeUtxos.reduce((sum, utxo) => sum + utxo.value, 0);
-  // 估算手续费：所有输入 + OP_RETURN(1) + 接收方输出 + token找零(1) + XEC找零(1)
+  // Estimate fee: inputs + OP_RETURN(1) + recipients + token change(1) + XEC change(1)
   const nOutputs = 1 + recipients.length + (tokenChange > 0n ? 1 : 0) + 1;
   const estimatedFee = estimateFee(selectedFeeUtxos.length + selectedTokenUtxos.length, nOutputs);
 
-  // 计算所需的最小金额
+  // Calculate minimum amount required
   const requiredAmount = recipients.length * dustLimit + (tokenChange > 0n ? dustLimit : 0) + estimatedFee;
   
   if (totalFeeInputValue < requiredAmount) {
@@ -281,15 +281,14 @@ function selectSlpUtxos(
     );
   }
 
-  // 构建最终的发送金额数组
+  // Build final send amounts array
   const finalSendAmounts = [...sendAmounts];
   if (tokenChange > 0n) {
     finalSendAmounts.push(tokenChange);
   }
 
   return {
-    selectedTokenUtxos, // 改为数组
-    selectedFeeUtxos,
+    selectedTokenUtxos,     selectedFeeUtxos,
     totalFeeInputValue,
     estimatedFee,
     feeChangeAmount: totalFeeInputValue - requiredAmount + estimatedFee,
@@ -299,8 +298,7 @@ function selectSlpUtxos(
     totalTokens,
     dustLimit,
     summary: {
-      tokenUtxoCount: selectedTokenUtxos.length, // 更新计数
-      feeUtxoCount: selectedFeeUtxos.length,
+      tokenUtxoCount: selectedTokenUtxos.length,       feeUtxoCount: selectedFeeUtxos.length,
       recipientCount: recipients.length,
       hasTokenChange: tokenChange > 0n,
       totalOutputs: 1 + recipients.length + (tokenChange > 0n ? 1 : 0) + 1 // OP_RETURN + recipients + token_change + fee_change
@@ -309,10 +307,10 @@ function selectSlpUtxos(
 }
 
 /**
- * 获取地址余额信息
- * @param address - eCash地址
+ * Get balance info for an address
+ * @param address - eCash address
  * @param chronikClient - Optional chronik client instance (uses default if not provided)
- * @returns 余额信息
+ * @returns Balance information
  */
 async function getAddressBalance(address: string, chronikClient?: ChronikClient): Promise<AddressBalance> {
   try {
@@ -322,7 +320,7 @@ async function getAddressBalance(address: string, chronikClient?: ChronikClient)
     
     const totalBalance = nonSlpUtxos.reduce((sum, utxo) => sum + utxo.value, 0);
     
-    // 按代币ID分组SLP UTXOs
+    // Group SLP UTXOs by token ID
     const tokenBalances: { [key: string]: TokenBalance } = {};
     slpUtxos.forEach(utxo => {
       const tokenId = utxo.slpToken!.tokenId;

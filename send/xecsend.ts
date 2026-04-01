@@ -5,14 +5,14 @@ import { buildAndBroadcastTransaction, verifyFee } from '../transaction/transact
 import { TransactionResult, UtxoStrategy } from '../types';
 import { ChronikClient } from 'chronik-client';
 
-// 扩展的接收方接口，支持代币交易
+// Extended recipient interface supporting tokens
 interface ExtendedRecipient {
   address: string;
   amount: bigint;
   tokenId?: string;
 }
 
-// XEC交易特定的结果接口，扩展基础TransactionResult
+// XEC specific transaction result
 interface XecTransactionResult extends TransactionResult {
   utxoSelection: any;
   recipients: number;
@@ -30,78 +30,74 @@ export async function createRawXecTransaction(
   recipients: ExtendedRecipient[], 
   utxoStrategy: UtxoStrategy = 'all',
   addressIndex: number = 0,
-  mnemonic?: string, // 可选的助记词参数
+  mnemonic?: string,
   chronikClient?: ChronikClient
 ): Promise<XecTransactionResult> {
   try {
-    // 验证参数
+    // Validate parameters
     if (!Array.isArray(recipients) || recipients.length === 0) {
       throw new Error('recipients must be a non-empty array');
     }
-    
-    // 验证每个接收方对象
+
+    // Validate each recipient
     for (const recipient of recipients) {
       if (!recipient.address || typeof recipient.amount !== 'bigint') {
         throw new Error('Each recipient must have address and amount (bigint) fields');
       }
 
-      // 如果提供了tokenId，验证其格式
       if (recipient.tokenId && typeof recipient.tokenId !== 'string') {
         throw new Error('tokenId must be a string if provided');
       }
     }
 
-    // 初始化钱包 - 使用指定的地址索引和可选的助记词
+    // Initialize wallet
     const { walletSk, walletPk, walletP2pkh, address: utxoAddress } = initializeWallet(addressIndex, mnemonic);
-    
-    const utxos = await getUtxos(utxoAddress, chronikClient); // 传递chronik客户端
+
+    const utxos = await getUtxos(utxoAddress, chronikClient);
     if (utxos.length === 0) {
       throw new Error(`No UTXOs found for address index ${addressIndex}`);
     }
 
-    // 计算总发送金额 (只计算XEC，不包括代币)
+    // Calculate total XEC amount (excluding tokens)
     const totalSendAmount: bigint = recipients
-      .filter(recipient => !recipient.tokenId) // 只计算非代币交易
+      .filter(recipient => !recipient.tokenId)
       .reduce((sum, recipient) => sum + recipient.amount, 0n);
 
-    // 分析交易类型
+    // Analyze transaction type
     const xecRecipients: ExtendedRecipient[] = recipients.filter(r => !r.tokenId);
     const tokenRecipients: ExtendedRecipient[] = recipients.filter(r => r.tokenId);
 
-    // 选择UTXOs
+        // Select UTXOs
     const utxoSelection = selectUtxos(utxos, Number(totalSendAmount), utxoStrategy);
     const { selectedUtxos } = utxoSelection;
 
-    // 记录交易摘要
-    // 构建交易输入
+    // Build transaction inputs
     const inputs = buildTransactionInputs(selectedUtxos, walletP2pkh, walletSk, walletPk);
-    
-    // 构建交易输出 - 为每个接收方创建输出
+
+    // Build transaction outputs
     const outputs: any[] = [];
-    
-    // 添加所有接收方输出
+
     recipients.forEach(recipient => {
       const output: any = {
         sats: BigInt(recipient.amount),
         script: createP2pkhScript(recipient.address)
       };
-      
-      // 如果是代币交易，添加代币信息
+
       if (recipient.tokenId) {
         output.tokenId = recipient.tokenId;
       }
-      
+
       outputs.push(output);
     });
-    
-    // 添加找零脚本 - 保持原始逻辑！
+
+    // Add change output
     outputs.push(walletP2pkh);
 
-    // 用 EccDummy 验证输入能覆盖输出 + 真实手续费（保守上界）
+    // Verify fee with EccDummy
     verifyFee(selectedUtxos, outputs);
 
-    // 构建并广播交易
-    const result = await buildAndBroadcastTransaction(inputs, outputs, { chronik: chronikClient }); // 传递chronik客户端
+    // Build and broadcast transaction
+    const result = await buildAndBroadcastTransaction(inputs, outputs, { chronik: chronikClient });
     
     return {
       ...result,
