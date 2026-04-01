@@ -105,6 +105,9 @@ await quick.sendAlp([
 - `fetchAgoraOffers(options)` - Query Agora DEX offers
 - `acceptAgoraOffer(offer, options)` - Buy from specific Agora offer
 - `buyAgoraTokens(options)` - Auto-buy tokens across multiple offers
+- `createAgoraOffer(options)` - List tokens for sale
+- `fetchMyAgoraOffers(options)` - Query your active sell offers
+- `cancelAgoraOffer(offer, options)` - Cancel a sell offer
 
 ### Options
 
@@ -204,6 +207,30 @@ const result = await quick.buyAgoraTokens({
 
 console.log(`Bought ${result.totalBought} tokens in ${result.transactions.length} orders`);
 console.log(`Avg price: ${result.avgPrice} XEC`);
+```
+
+### Sell & Management
+
+#### List tokens for sale
+
+```javascript
+const result = await quick.createAgoraOffer({
+  tokenId: 'your-token-id',
+  tokenAmount: 100,
+  pricePerToken: 5.5,
+  mnemonic: 'your mnemonic',
+  chronik: agoraEnabledChronik
+});
+```
+
+#### Cancel an offer
+
+```javascript
+// 1. Fetch your active offers
+const myOffers = await quick.fetchMyAgoraOffers({ mnemonic, chronik });
+
+// 2. Cancel a specific offer
+const cancelResult = await quick.cancelAgoraOffer(myOffers[0], { mnemonic, chronik });
 ```
 
 ## Error Handling
