@@ -228,7 +228,7 @@ export async function acceptAgoraOffer(
 
         const fuelUtxos = utxos.filter(utxo => {
             if (utxo.slpToken) return false;
-            if (utxo.isCoinbase && tipHeight > 0 && utxo.blockHeight > 0) {
+            if (utxo.isCoinbase && tipHeight > 0 && typeof utxo.blockHeight === 'number' && utxo.blockHeight > 0) {
                 return (tipHeight - utxo.blockHeight + 1) >= 100;
             }
             return true;
@@ -252,7 +252,7 @@ export async function acceptAgoraOffer(
         }));
 
         const acceptFeeSats = offer.acceptFeeSats({
-            recipientScript: wallet.walletP2pkh,
+            recipientScript: wallet.walletP2pkh as any,
             feePerKb: 1000n,
             acceptedAtoms
         });
@@ -267,11 +267,10 @@ export async function acceptAgoraOffer(
         }
 
         const acceptTx = offer.acceptTx({
-            ecc,
             covenantSk: DUMMY_KEYPAIR.sk,
             covenantPk: DUMMY_KEYPAIR.pk,
-            fuelInputs,
-            recipientScript: wallet.walletP2pkh,
+            fuelInputs: fuelInputs as any,
+            recipientScript: wallet.walletP2pkh as any,
             acceptedAtoms,
             dustSats: 546n,
             feePerKb: 1000n,
