@@ -2,6 +2,7 @@ import { createRawSlpTransaction, createRawAlpTransaction } from './send/tokense
 import { createRawXecTransaction } from './send/xecsend';
 import { fetchAgoraOffers as _fetchAgoraOffers, acceptAgoraOffer as _acceptAgoraOffer, buyAgoraTokens as _buyAgoraTokens } from './send/agorabuy';
 import { createAgoraOffer as _createAgoraOffer } from './send/agorasell';
+import { fetchMyAgoraOffers as _fetchMyAgoraOffers, cancelAgoraOffer as _cancelAgoraOffer } from './send/agoracancel';
 import {
   Recipient,
   TransactionResult,
@@ -17,6 +18,9 @@ import {
   AgoraBuyAggregateResult,
   AgoraSellOptions,
   AgoraSellResult,
+  AgoraMyOffersOptions,
+  AgoraCancelOptions,
+  AgoraCancelResult,
 } from './types';
 
 /**
@@ -86,6 +90,23 @@ class TransactionManager {
   }
 
   /**
+   * 查询我挂出的活跃 Agora 订单
+   * @param options - 查询选项
+   */
+  async fetchMyAgoraOffers(options: AgoraMyOffersOptions): Promise<AgoraOffer[]> {
+    return await _fetchMyAgoraOffers(options);
+  }
+
+  /**
+   * 取消指定的 Agora 订单
+   * @param offer - fetchMyAgoraOffers 返回的订单对象
+   * @param options - 取消选项
+   */
+  async cancelAgoraOffer(offer: AgoraOffer, options: AgoraCancelOptions): Promise<AgoraCancelResult> {
+    return await _cancelAgoraOffer(offer, options);
+  }
+
+  /**
    * 通用发送方法
    * @param type - 交易类型
    * @param recipients - 接收方数组
@@ -141,4 +162,4 @@ export default quick;
 export { TransactionManager };
 
 // 便捷方法导出
-export const { sendSlp, sendAlp, sendXec, send, fetchAgoraOffers, acceptAgoraOffer, buyAgoraTokens, createAgoraOffer } = quick;
+export const { sendSlp, sendAlp, sendXec, send, fetchAgoraOffers, acceptAgoraOffer, buyAgoraTokens, createAgoraOffer, fetchMyAgoraOffers, cancelAgoraOffer } = quick;

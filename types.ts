@@ -108,6 +108,34 @@ export interface AgoraSellResult {
 }
 
 /**
+ * fetchMyAgoraOffers 的执行参数
+ */
+export interface AgoraMyOffersOptions {
+  addressIndex?: number;
+  mnemonic?: string;
+  chronik?: ChronikClient;
+}
+
+/**
+ * cancelAgoraOffer 的执行参数
+ */
+export interface AgoraCancelOptions {
+  addressIndex?: number;
+  mnemonic?: string;
+  chronik?: ChronikClient;
+}
+
+/**
+ * Agora 取消订单结果
+ */
+export interface AgoraCancelResult {
+  success: boolean;
+  message?: string;
+  txid?: string;
+  explorerLink?: string;
+}
+
+/**
  * 交易接收方
  */
 export interface Recipient {

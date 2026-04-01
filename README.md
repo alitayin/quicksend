@@ -13,6 +13,11 @@ npm install ecash-quicksend
 
 ## Migration Notes
 
+### v1.6.1+
+Added Agora DEX management functionality:
+- `fetchMyAgoraOffers()` - Query active sell offers listed by your wallet.
+- `cancelAgoraOffer()` - Cancel an active sell offer and reclaim tokens.
+
 ### v1.5.1+
 Added Agora DEX listing functionality:
 - `createAgoraOffer()` - List your tokens for sale on the DEX.
