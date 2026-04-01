@@ -49,8 +49,8 @@ function patchUtxoForAgora(utxo: any): any {
     patched.sats = sats;
     patched.value = Number(sats);
 
-    if (utxo.slpToken || utxo.token) {
-        const token = utxo.slpToken || utxo.token;
+    if (utxo.token) {
+        const token = utxo.token;
         const patchedToken = { ...token };
         let atoms: bigint;
         if (typeof token.atoms !== 'undefined') {
@@ -62,7 +62,6 @@ function patchUtxoForAgora(utxo: any): any {
         }
         patchedToken.atoms = atoms;
         patchedToken.amount = atoms;
-        patched.slpToken = patchedToken;
         patched.token = patchedToken;
     }
 
@@ -226,7 +225,7 @@ export async function acceptAgoraOffer(
         } catch (e) {}
 
         const fuelUtxos = utxos.filter(utxo => {
-            if (utxo.slpToken) return false;
+            if (utxo.token) return false;
             // Coinbase UTXOs need 100 blocks to mature
             if (utxo.isCoinbase) {
                 if (tipHeight <= 0 || typeof utxo.blockHeight !== 'number' || utxo.blockHeight <= 0) {

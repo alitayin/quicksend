@@ -150,16 +150,17 @@ export interface Utxo {
   address: string;
   isCoinbase: boolean;
   blockHeight: number;
-  slpToken?: SlpToken;
+  token?: TokenInfo;
 }
 
 /**
- * SLP token information interface
+ * Token information interface (supports SLP and ALP)
  */
-export interface SlpToken {
+export interface TokenInfo {
   tokenId: string;
   atoms: bigint;
   isMintBaton: boolean;
+  protocol: 'SLP' | 'ALP';
 }
 
 /**

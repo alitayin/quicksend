@@ -9,6 +9,7 @@ import {
 import { ChronikClient } from 'chronik-client';
 import * as wif from 'wif';
 import { deriveBuyerKey } from '../wallet/mnemonic-utils';
+import { getUtxos } from '../utxo/utxo-utils';
 
 /**
  * Create Agora sell offer (listing)
@@ -60,14 +61,32 @@ export async function createAgoraOffer(
             // 5. Use agora.selectParams
             // @ts-ignore
             const agora = new Agora(chronik as ChronikClient);
+
+            // Auto-detect protocol from UTXOs or Chronik
+            let tokenProtocol: 'ALP' | 'SLP' = 'ALP';
+            let tokenType = 0;
+
+            const utxos = await getUtxos(wallet.address, chronik as ChronikClient);
+            const tokenUtxo = utxos.find(u => u.token?.tokenId === tokenId);
+
+            if (tokenUtxo && tokenUtxo.token) {
+                tokenProtocol = tokenUtxo.token.protocol;
+                tokenType = tokenProtocol === 'ALP' ? 0 : 1; // ALP: 0, SLP: 1
+            } else {
+                // Fallback to chronik.token if no UTXOs found in wallet
+                const tokenInfo = await (chronik as ChronikClient).token(tokenId);
+                tokenProtocol = tokenInfo.tokenType.protocol as 'ALP' | 'SLP';
+                tokenType = tokenProtocol === 'ALP' ? 0 : 1;
+            }
+
             const partial = await agora.selectParams({
                 offeredAtoms: atomsToSell,
                 priceNanoSatsPerAtom,
                 makerPk: wallet.pk,
                 minAcceptedAtoms: atomsToSell / 100n > 1n ? atomsToSell / 100n : 1n,
                 tokenId,
-                tokenProtocol: 'ALP',
-                tokenType: 0
+                tokenProtocol,
+                tokenType
             });
 
             // 6. Execute listing

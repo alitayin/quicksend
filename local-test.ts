@@ -8,32 +8,33 @@ const mnemonic = 'valve vast enrich divorce mandate load risk miracle remind peo
  */
 async function testOriginal() {
     const RECIPIENT = 'ecash:qr6lws9uwmjkkaau4w956lugs9nlg9hudqs26lyxkv';
-    const TOKEN_MIST = '54dc2ecd5251f8dfda4c4f15ce05272116b01326076240e2b9cc0104d33b1484';
-    const TOKEN_GRAIL = 'd1131675cb62b65909fb45ba53b022da0bd0f34aaa71fc61770115472b186ffb';
+    const TOKEN_SLP = '54dc2ecd5251f8dfda4c4f15ce05272116b01326076240e2b9cc0104d33b1484'; // ALITA (SLP)
+    const TOKEN_ALP = 'd1131675cb62b65909fb45ba53b022da0bd0f34aaa71fc61770115472b186ffb'; // SS (ALP)
 
     console.log('\n=== [Original Tests] Starting ===');
 
     try {
-        console.log('Sending 10000 sats (100 XEC)...');
+        console.log('Sending 10000 sats (100 XEC) via sendXec...');
         const xecResult = await quick.sendXec(
             [{ address: RECIPIENT, amount: 10000n }],
             { mnemonic }
         );
         console.log('XEC txid:', xecResult.txid);
 
-        console.log('\nSending 1000 MIST atoms (SLP)...');
-        const mistResult = await quick.sendSlp(
+        console.log('\nSending SLP atoms via unified send (Auto-detect)...');
+        const slpResult = await quick.send(
+            'slp', // type is optional now, but testing backward compatibility
             [{ address: RECIPIENT, amount: 1000n }],
-            { tokenId: TOKEN_MIST, mnemonic }
+            { tokenId: TOKEN_SLP, mnemonic }
         );
-        console.log('MIST txid:', mistResult.txid);
+        console.log('SLP txid:', slpResult.txid);
 
-        console.log('\nSending 100 GRAIL atoms (ALP)...');
-        const grailResult = await quick.sendAlp(
+        console.log('\nSending ALP atoms via sendToken (Auto-detect)...');
+        const alpResult = await quick.sendToken(
             [{ address: RECIPIENT, amount: 100n }],
-            { tokenId: TOKEN_GRAIL, mnemonic }
+            { tokenId: TOKEN_ALP, mnemonic }
         );
-        console.log('GRAIL txid:', grailResult.txid);
+        console.log('ALP txid:', alpResult.txid);
     } catch (error) {
         console.error('Original test failed:', error);
     }
@@ -118,10 +119,77 @@ async function testAgoraAggregateBuy() {
     }
 }
 
+/**
+ * Agora Sell and Cancel Test (Auto-detect protocol)
+ */
+async function testAgoraSellAndCancel() {
+    const TOKEN_SLP = '54dc2ecd5251f8dfda4c4f15ce05272116b01326076240e2b9cc0104d33b1484';
+    const TOKEN_ALP = 'd1131675cb62b65909fb45ba53b022da0bd0f34aaa71fc61770115472b186ffb';
+
+    const testTokens = [
+        { id: TOKEN_SLP, name: 'SLP (ALITA)', amount: 100n },
+        { id: TOKEN_ALP, name: 'ALP (SS)', amount: 10n }
+    ];
+
+    for (const token of testTokens) {
+        console.log(`\n=== [Agora Sell/Cancel Test] Token: ${token.name} ===`);
+
+        try {
+            // 1. Create Offer
+            console.log(`Listing ${token.amount} atoms...`);
+            const sellResult = await quick.createAgoraOffer({
+                tokenId: token.id,
+                tokenAmount: token.amount,
+                pricePerToken: 10, // Increased price to avoid dust error
+                mnemonic
+            });
+
+            if (!sellResult.success) {
+                console.error(`✗ Listing failed:`, sellResult.message);
+                continue;
+            }
+            console.log(`✓ Listing success! txid: ${sellResult.txid}`);
+
+            // 2. Fetch My Offers to find the one to cancel
+            console.log(`Fetching my offers to verify...`);
+            const myOffers = await quick.fetchMyAgoraOffers({
+                mnemonic
+            });
+
+            // Use type-safe check for tokenId
+            const createdOffer = myOffers.find(o => {
+                const params = (o.offer.variant as any).params;
+                return params && params.tokenId === token.id;
+            });
+            if (!createdOffer) {
+                console.error(`✗ Could not find the created offer in my offers list`);
+                continue;
+            }
+            console.log(`✓ Found offer in my list. Protocol: ${(createdOffer.offer.token as any).protocol}`);
+
+            // 3. Cancel Offer
+            console.log(`Canceling offer...`);
+            const cancelResult = await quick.cancelAgoraOffer(createdOffer, {
+                mnemonic
+            });
+
+            if (cancelResult.success) {
+                console.log(`✓ Cancel success! txid: ${cancelResult.txid}`);
+            } else {
+                console.error(`✗ Cancel failed:`, cancelResult.message);
+            }
+
+        } catch (error) {
+            console.error(`Sell/Cancel test failed for ${token.name}:`, error);
+        }
+    }
+}
+
 async function runAllTests() {
     await testOriginal();
     await testAgoraBuy();
     await testAgoraAggregateBuy();
+    await testAgoraSellAndCancel();
 }
 
 runAllTests();

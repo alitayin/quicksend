@@ -1,4 +1,4 @@
-import { createRawSlpTransaction, createRawAlpTransaction } from './send/tokensend';
+import { createRawTokenTransaction, createRawSlpTransaction, createRawAlpTransaction } from './send/tokensend';
 import { createRawXecTransaction } from './send/xecsend';
 import { fetchAgoraOffers as _fetchAgoraOffers, acceptAgoraOffer as _acceptAgoraOffer, buyAgoraTokens as _buyAgoraTokens } from './send/agorabuy';
 import { createAgoraOffer as _createAgoraOffer } from './send/agorasell';
@@ -29,21 +29,26 @@ import {
  */
 class TransactionManager {
   /**
-   * Send SLP tokens
+   * Send tokens (automatically detects SLP or ALP)
    * @param recipients - Array of recipients
-   * @param options - Transaction options (mnemonic, chronik instance, etc.)
+   * @param options - Transaction options (tokenId, mnemonic, chronik instance, etc.)
    */
-  async sendSlp(recipients: Recipient[], options: TokenTransactionOptions): Promise<TransactionResult> {
-    return await createRawSlpTransaction(recipients, options);
+  async sendToken(recipients: Recipient[], options: TokenTransactionOptions): Promise<TransactionResult> {
+    return await createRawTokenTransaction(recipients, options);
   }
 
   /**
-   * Send ALP tokens
-   * @param recipients - Array of recipients
-   * @param options - Transaction options (mnemonic, chronik instance, etc.)
+   * Send SLP tokens (Deprecated: use sendToken)
+   */
+  async sendSlp(recipients: Recipient[], options: TokenTransactionOptions): Promise<TransactionResult> {
+    return await createRawTokenTransaction(recipients, options);
+  }
+
+  /**
+   * Send ALP tokens (Deprecated: use sendToken)
    */
   async sendAlp(recipients: Recipient[], options: TokenTransactionOptions): Promise<TransactionResult> {
-    return await createRawAlpTransaction(recipients, options);
+    return await createRawTokenTransaction(recipients, options);
   }
 
   /**
@@ -107,43 +112,35 @@ class TransactionManager {
   }
 
   /**
-   * General send method
-   * @param type - Transaction type
+   * General send method. Automatically handles tokens if options.tokenId is present.
+   * @param type - Transaction type ('slp', 'alp', 'xec'). Optional if tokenId is in options.
    * @param recipients - Array of recipients
    * @param options - Transaction options (mnemonic, chronik, etc.)
    */
-  async send(type: TransactionType, recipients: Recipient[], options: GeneralSendOptions = {}): Promise<TransactionResult> {
-    switch (type.toLowerCase() as TransactionType) {
+  async send(type: TransactionType | string, recipients: Recipient[], options: GeneralSendOptions = {}): Promise<TransactionResult> {
+    // If tokenId is provided, handle it as a token transaction
+    if (options.tokenId) {
+      return await this.sendToken(recipients, {
+        tokenId: options.tokenId,
+        addressIndex: options.addressIndex,
+        feeStrategy: options.feeStrategy,
+        tokenStrategy: options.tokenStrategy,
+        mnemonic: options.mnemonic,
+        chronik: options.chronik
+      });
+    }
+
+    switch (type.toLowerCase()) {
       case 'slp':
-        if (!options.tokenId) {
-          throw new Error('SLP transactions require tokenId');
-        }
-        return await this.sendSlp(recipients, {
-          tokenId: options.tokenId,
-          addressIndex: options.addressIndex,
-          feeStrategy: options.feeStrategy,
-          tokenStrategy: options.tokenStrategy,
-          mnemonic: options.mnemonic,
-          chronik: options.chronik
-        });
       case 'alp':
-        if (!options.tokenId) {
-          throw new Error('ALP transactions require tokenId');
-        }
-        return await this.sendAlp(recipients, {
-          tokenId: options.tokenId,
-          addressIndex: options.addressIndex,
-          feeStrategy: options.feeStrategy,
-          tokenStrategy: options.tokenStrategy,
-          mnemonic: options.mnemonic,
-          chronik: options.chronik
-        });
+        throw new Error(`${type.toUpperCase()} transactions require tokenId in options`);
       case 'xec':
         const xecOptions: XecTransactionOptions = {
           utxoStrategy: options.utxoStrategy,
           addressIndex: options.addressIndex,
           mnemonic: options.mnemonic,
-          chronik: options.chronik         };
+          chronik: options.chronik
+        };
         return await this.sendXec(recipients, xecOptions);
       default:
         throw new Error(`Unsupported transaction type: ${type}`);
@@ -159,4 +156,4 @@ export default quick;
 export { TransactionManager };
 
 // Convenience method exports
-export const { sendSlp, sendAlp, sendXec, send, fetchAgoraOffers, acceptAgoraOffer, buyAgoraTokens, createAgoraOffer, fetchMyAgoraOffers, cancelAgoraOffer } = quick;
+export const { sendToken, sendSlp, sendAlp, sendXec, send, fetchAgoraOffers, acceptAgoraOffer, buyAgoraTokens, createAgoraOffer, fetchMyAgoraOffers, cancelAgoraOffer } = quick;

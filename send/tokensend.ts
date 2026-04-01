@@ -92,24 +92,15 @@ function buildAlpOutputs(
 /**
  * General function to create token transactions
  */
-async function createTokenTransaction(
-  recipients: Recipient[], 
-  options: TokenTransactionOptions, 
-  tokenType: 'SLP' | 'ALP' = 'SLP'
+export async function createRawTokenTransaction(
+  recipients: Recipient[],
+  options: TokenTransactionOptions
 ): Promise<TransactionResult> {
   try {
     // Validate required parameters
     validateRequiredParams(options, [
       { key: 'tokenId', message: 'tokenId is required' },
     ]);
-
-    // Validate recipient count limit
-    const maxOutputs = tokenType === 'SLP' ? SLP_MAX_SEND_OUTPUTS : ALP_POLICY_MAX_OUTPUTS;
-    if (recipients.length > maxOutputs) {
-      throw new Error(
-        `Too many recipients: ${tokenType} transactions support at most ${maxOutputs} token outputs per tx, but ${recipients.length} were provided.`
-      );
-    }
 
     const {
       tokenId,
@@ -124,7 +115,7 @@ async function createTokenTransaction(
 
     // Initialize wallet
     const { walletSk, walletPk, walletP2pkh, address: utxoAddress } = initializeWallet(addressIndex, mnemonic);
-    
+
     const utxos = await getUtxos(utxoAddress, chronikClient);     if (utxos.length === 0) {
       throw new Error(`No UTXOs found for address index ${addressIndex}`);
     }
@@ -144,11 +135,26 @@ async function createTokenTransaction(
       summary
     } = tokenSelection;
 
+    if (selectedTokenUtxos.length === 0) {
+      throw new Error(`No UTXOs found for token ID: ${tokenId}`);
+    }
+
+    // Auto-detect protocol from selected UTXOs
+    const detectedProtocol = selectedTokenUtxos[0].token!.protocol;
+
+    // Validate recipient count limit
+    const maxOutputs = detectedProtocol === 'SLP' ? SLP_MAX_SEND_OUTPUTS : ALP_POLICY_MAX_OUTPUTS;
+    if (recipients.length > maxOutputs) {
+      throw new Error(
+        `Too many recipients: ${detectedProtocol} transactions support at most ${maxOutputs} token outputs per tx, but ${recipients.length} were provided.`
+      );
+    }
+
     // Build transaction inputs and outputs
     const inputs = buildTransactionInputs([selectedTokenUtxos, selectedFeeUtxos], walletP2pkh, walletSk, walletPk);
 
     let outputs: any[];
-    if (tokenType === 'ALP') {
+    if (detectedProtocol === 'ALP') {
       outputs = buildAlpOutputs(tokenId, finalSendAmounts, recipients, tokenChange, dustLimit, walletP2pkh);
     } else {
       outputs = buildSlpOutputs(tokenId, finalSendAmounts, recipients, tokenChange, dustLimit, walletP2pkh);
@@ -161,21 +167,21 @@ async function createTokenTransaction(
     return await buildAndBroadcastTransaction(inputs, outputs, { dustLimit, chronik: chronikClient });
 
   } catch (error) {
-    console.error(`${tokenType} transaction creation failed:`, error);
+    console.error(`Token transaction creation failed:`, error);
     throw error;
   }
 }
 
 /**
- * Create SLP token transaction
+ * Create SLP token transaction (Deprecated: use createRawTokenTransaction)
  */
 export async function createRawSlpTransaction(recipients: Recipient[], options: TokenTransactionOptions): Promise<TransactionResult> {
-  return createTokenTransaction(recipients, options, 'SLP');
+  return createRawTokenTransaction(recipients, options);
 }
 
 /**
- * Create ALP token transaction
+ * Create ALP token transaction (Deprecated: use createRawTokenTransaction)
  */
 export async function createRawAlpTransaction(recipients: Recipient[], options: TokenTransactionOptions): Promise<TransactionResult> {
-  return createTokenTransaction(recipients, options, 'ALP');
+  return createRawTokenTransaction(recipients, options);
 } 

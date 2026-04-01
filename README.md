@@ -43,13 +43,14 @@ const result = await sendXec(
 console.log(result.txid);
 ```
 
-### Send Tokens (SLP/ALP)
+### Send Tokens (Unified SLP/ALP)
+
+Protocol is automatically detected from UTXO data. No need to specify if it's SLP or ALP.
 
 ```javascript
-import { sendSlp, sendAlp } from 'ecash-quicksend';
+import { sendToken } from 'ecash-quicksend';
 
-// Send SLP
-await sendSlp(
+await sendToken(
   [{ address: 'ecash:q...', amount: 500n }],
   { 
     tokenId: '...', 
@@ -160,9 +161,10 @@ const cancelResult = await cancelAgoraOffer(myOffers[0], {
 ## API Summary
 
 - `sendXec(recipients, options)`: Send XEC to one or more addresses.
-- `sendSlp(recipients, options)`: Send SLP tokens.
-- `sendAlp(recipients, options)`: Send ALP tokens.
-- `createAgoraOffer(options)`: List tokens for sale on Agora.
+- `sendToken(recipients, options)`: Send tokens (auto-detects SLP/ALP).
+- `sendSlp(recipients, options)`: Send SLP tokens (Deprecated: use `sendToken`).
+- `sendAlp(recipients, options)`: Send ALP tokens (Deprecated: use `sendToken`).
+- `createAgoraOffer(options)`: List tokens (SLP or ALP) for sale on Agora.
 - `buyAgoraTokens(options)`: Market buy tokens up to a max price.
 - `acceptAgoraOffer(offer, options)`: Buy from a specific Agora offer.
 - `fetchAgoraOffers(options)`: List available offers for a token.
@@ -171,6 +173,7 @@ const cancelResult = await cancelAgoraOffer(myOffers[0], {
 
 ## Changelog
 
+- v2.0.0: Unified SLP/ALP handling via auto-detection. Added support for SLP listings on Agora.
 - v1.7.1: Removed tokenDecimals, amounts are now BigInt atoms.
 - v1.6.1: Added Agora DEX management (fetch/cancel).
 - v1.5.1: Added Agora DEX listing.

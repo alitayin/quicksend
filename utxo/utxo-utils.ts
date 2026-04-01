@@ -1,6 +1,6 @@
 import { calcTxFee, DEFAULT_FEE_SATS_PER_KB, Address } from 'ecash-lib';
 import { chronik } from '../client/chronik-client';
-import { Utxo, SlpToken, Recipient, UtxoStrategy, FeeStrategy, TokenStrategy } from '../types';
+import { Utxo, TokenInfo, Recipient, UtxoStrategy, FeeStrategy, TokenStrategy } from '../types';
 import { ChronikClient } from 'chronik-client';
 
 // P2PKH transaction byte size constants
@@ -95,10 +95,11 @@ async function getUtxos(address: string, chronikClient?: ChronikClient): Promise
       address: address,
       isCoinbase: utxo.isCoinbase ?? false,
       blockHeight: utxo.blockHeight ?? -1,
-      slpToken: utxo.token ? {
+      token: utxo.token ? {
         tokenId: utxo.token.tokenId,
         atoms: utxo.token.atoms,
         isMintBaton: utxo.token.isMintBaton ?? false,
+        protocol: utxo.token.tokenType.protocol as 'SLP' | 'ALP',
       } : undefined,
     }));
     return utxos;
@@ -116,7 +117,7 @@ async function getUtxos(address: string, chronikClient?: ChronikClient): Promise
  */
 function selectUtxos(utxos: Utxo[], sendAmount: number, strategy: UtxoStrategy = 'all'): UtxoSelection {
   // Filter SLP tokens and immature coinbase UTXOs
-  const nonSlpUtxos = utxos.filter(utxo => !utxo.slpToken && !utxo.isCoinbase);
+  const nonSlpUtxos = utxos.filter(utxo => !utxo.token && !utxo.isCoinbase);
   
   if (nonSlpUtxos.length === 0) {
     throw new Error('No non-SLP UTXOs available');
@@ -198,12 +199,12 @@ function selectSlpUtxos(
 
   // Separate SLP and non-SLP UTXOs
   const slpUtxos = utxos.filter(utxo =>
-    utxo.slpToken &&
-    utxo.slpToken.tokenId === tokenId &&
-    !utxo.slpToken.isMintBaton // never spend mint batons as regular send inputs
+    utxo.token &&
+    utxo.token.tokenId === tokenId &&
+    !utxo.token.isMintBaton // never spend mint batons as regular send inputs
   );
   // Filter immature coinbase UTXOs
-  const nonSlpUtxos = utxos.filter(utxo => !utxo.slpToken && !utxo.isCoinbase);
+  const nonSlpUtxos = utxos.filter(utxo => !utxo.token && !utxo.isCoinbase);
 
   if (slpUtxos.length === 0) {
     throw new Error(`No SLP UTXOs available for token ${tokenId}`);
@@ -223,23 +224,23 @@ function selectSlpUtxos(
   if (tokenStrategy === 'all') {
     // Select all UTXOs for the same token ID to reduce fragmentation
     selectedTokenUtxos = slpUtxos;
-    totalTokens = slpUtxos.reduce((sum, utxo) => sum + BigInt(utxo.slpToken!.atoms), 0n);
+    totalTokens = slpUtxos.reduce((sum, utxo) => sum + BigInt(utxo.token!.atoms), 0n);
   } else if (tokenStrategy === 'largest') {
     // Select largest SLP UTXO
     const selectedTokenUtxo = slpUtxos.reduce((max, current) => {
-      const currentAmount = BigInt(current.slpToken!.atoms);
-      const maxAmount = BigInt(max.slpToken!.atoms);
+      const currentAmount = BigInt(current.token!.atoms);
+      const maxAmount = BigInt(max.token!.atoms);
       return currentAmount > maxAmount ? current : max;
     }, slpUtxos[0]);
     selectedTokenUtxos = [selectedTokenUtxo];
-    totalTokens = BigInt(selectedTokenUtxo.slpToken!.atoms);
+    totalTokens = BigInt(selectedTokenUtxo.token!.atoms);
   } else if (tokenStrategy === 'minimal') {
     // Select smallest sufficient UTXO
     const sortedSlpUtxos = slpUtxos
-      .filter(utxo => BigInt(utxo.slpToken!.atoms) >= totalSendTokens)
+      .filter(utxo => BigInt(utxo.token!.atoms) >= totalSendTokens)
       .sort((a, b) => {
-        const aAmount = BigInt(a.slpToken!.atoms);
-        const bAmount = BigInt(b.slpToken!.atoms);
+        const aAmount = BigInt(a.token!.atoms);
+        const bAmount = BigInt(b.token!.atoms);
         return aAmount < bAmount ? -1 : aAmount > bAmount ? 1 : 0;
       });
     
@@ -247,7 +248,7 @@ function selectSlpUtxos(
       throw new Error('Insufficient token balance');
     }
     selectedTokenUtxos = [sortedSlpUtxos[0]];
-    totalTokens = BigInt(sortedSlpUtxos[0].slpToken!.atoms);
+    totalTokens = BigInt(sortedSlpUtxos[0].token!.atoms);
   }
   
   if (totalSendTokens > totalTokens) {
@@ -315,15 +316,15 @@ function selectSlpUtxos(
 async function getAddressBalance(address: string, chronikClient?: ChronikClient): Promise<AddressBalance> {
   try {
     const utxos = await getUtxos(address, chronikClient);
-    const nonSlpUtxos = utxos.filter(utxo => !utxo.slpToken);
-    const slpUtxos = utxos.filter(utxo => utxo.slpToken);
+    const nonSlpUtxos = utxos.filter(utxo => !utxo.token);
+    const slpUtxos = utxos.filter(utxo => utxo.token);
     
     const totalBalance = nonSlpUtxos.reduce((sum, utxo) => sum + utxo.value, 0);
     
     // Group SLP UTXOs by token ID
     const tokenBalances: { [key: string]: TokenBalance } = {};
     slpUtxos.forEach(utxo => {
-      const tokenId = utxo.slpToken!.tokenId;
+      const tokenId = utxo.token!.tokenId;
       if (!tokenBalances[tokenId]) {
         tokenBalances[tokenId] = {
           tokenId,
@@ -332,7 +333,7 @@ async function getAddressBalance(address: string, chronikClient?: ChronikClient)
           utxos: []
         };
       }
-      tokenBalances[tokenId].totalTokens += BigInt(utxo.slpToken!.atoms);
+      tokenBalances[tokenId].totalTokens += BigInt(utxo.token!.atoms);
       tokenBalances[tokenId].utxoCount++;
       tokenBalances[tokenId].utxos.push(utxo);
     });
