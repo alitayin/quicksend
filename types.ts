@@ -1,6 +1,3 @@
-// 基础接口定义
-
-// 引入ChronikClient类型
 import { ChronikClient } from "chronik-client";
 import { AgoraOffer as EcashAgoraOffer } from 'ecash-agora';
 
@@ -9,19 +6,19 @@ import { AgoraOffer as EcashAgoraOffer } from 'ecash-agora';
  */
 export interface AgoraFetchOptions {
   tokenId: string;
-  tokenDecimals?: number; // 默认 0，用于计算展示单价
-  maxPrice?: number;      // 每个代币最高 XEC 价格（不传或 0 = 不限价）
+  tokenDecimals?: number; // 默认 0
+  maxPrice?: number;      // 每个代币最高 XEC 价格
   chronik?: ChronikClient;
 }
 
 /**
- * 单个报价（包含定价信息，内含原始 offer 对象供后续成交使用）
+ * 单个报价
  */
 export interface AgoraOffer {
-  offer: EcashAgoraOffer;       // 原始 ecash-agora 报价对象
-  pricePerToken: number;        // 单价 (XEC)
-  totalTokenAmount: number;     // 可买总量 (展示单位)
-  totalXEC: number;             // 总价 (XEC)
+  offer: EcashAgoraOffer;
+  pricePerToken: number;
+  totalTokenAmount: number;
+  totalXEC: number;
   offerType: 'PARTIAL' | 'ONE_TO_ONE';
 }
 
@@ -29,10 +26,10 @@ export interface AgoraOffer {
  * acceptAgoraOffer 的执行参数
  */
 export interface AgoraAcceptOptions {
-  amount: number;          // 想买的数量 (展示单位，按 tokenDecimals 缩放)
-  tokenDecimals?: number;  // 默认 0
-  addressIndex?: number;   // 默认 0
-  mnemonic?: string;       // 不传则从环境变量读取
+  amount: number;
+  tokenDecimals?: number;
+  addressIndex?: number;
+  mnemonic?: string;
   chronik?: ChronikClient;
 }
 
@@ -41,26 +38,24 @@ export interface AgoraAcceptOptions {
  */
 export interface AgoraBuyResult {
   success: boolean;
-  reason: string; // 'SUCCESS' | 'AMOUNT_TOO_SMALL' | 'INVALID_REMAINING_AMOUNT' | 'INSUFFICIENT_BALANCE' | ...
+  reason: string;
   message?: string;
-  // 成功时：
   txid?: string;
   explorerLink?: string;
   actualAmount?: number;
   totalXECPaid?: number;
   pricePerToken?: number;
   networkFee?: number;
-  // 失败时：
   details?: Record<string, unknown>;
 }
 
 /**
- * 聚合购买选项（模式2：自动循环购买多个订单）
+ * 聚合购买选项
  */
 export interface AgoraBuyOptions {
   tokenId: string;
-  amount: number;              // 目标购买数量
-  maxPrice: number;            // 最高单价（XEC）
+  amount: number;
+  maxPrice: number;
   tokenDecimals?: number;
   addressIndex?: number;
   mnemonic?: string;
@@ -72,57 +67,80 @@ export interface AgoraBuyOptions {
  */
 export interface AgoraBuyAggregateResult {
   success: boolean;
-  totalBought: number;         // 实际买到的总数量
-  totalXECPaid: number;        // 总花费（含手续费）
-  avgPrice: number;            // 平均单价
+  totalBought: number;
+  totalXECPaid: number;
+  avgPrice: number;
   transactions: Array<{
     txid: string;
     amount: number;
     price: number;
     fee: number;
   }>;
-  skippedOffers: number;       // 跳过的订单数（买不了的）
+  skippedOffers: number;
   message?: string;
 }
 
 /**
- * 交易接收方
- *
- * @property address - eCash address (ecash:qq...)
- * @property amount - Unit depends on transaction type:
- *   - XEC: satoshis (1 XEC = 100 sats, e.g. amount: 1000 = 10.00 XEC)
- *   - SLP/ALP token: base atoms (smallest unit; combine with tokenDecimals to get display amount)
+ * createAgoraOffer 的执行参数
  */
-export interface Recipient {
-  address: string;
-  /** XEC: satoshis (1 XEC = 100 sats) | Token: base atoms (smallest unit) */
-  amount: number;
+export interface AgoraSellOptions {
+  tokenId: string;
+  tokenAmount: number;
+  pricePerToken: number;
+  tokenDecimals?: number;
+  addressIndex?: number;
+  mnemonic?: string;
+  chronik?: ChronikClient;
+  offerType?: 'PARTIAL' | 'ONE_TO_ONE';
 }
 
 /**
- * UTXO接口 - 统一的UTXO定义
+ * Agora 卖单创建结果
+ */
+export interface AgoraSellResult {
+  success: boolean;
+  message?: string;
+  txid?: string;
+  explorerLink?: string;
+  tokenAmount?: number;
+  pricePerToken?: number;
+  offerType?: string;
+}
+
+/**
+ * 交易接收方
+ */
+export interface Recipient {
+  address: string;
+  amount: number; // 必须是 number 以兼容现有代码
+}
+
+/**
+ * UTXO 接口定义
  */
 export interface Utxo {
   txid: string;
   vout: number;
   value: number;
-  address?: string;
+  sats?: bigint;
+  address: string;
+  isCoinbase: boolean;
+  blockHeight: number;
   slpToken?: SlpToken;
-  isCoinbase?: boolean;
-  blockHeight?: number;
 }
 
 /**
- * SLP代币信息接口
+ * SLP 代币信息接口
  */
 export interface SlpToken {
   tokenId: string;
+  amount?: number | bigint;
   atoms: string | bigint;
-  isMintBaton: boolean; // Mint baton UTXOs must never be spent as regular send inputs
+  isMintBaton: boolean;
 }
 
 /**
- * 交易结果 - 统一的交易结果接口
+ * 交易结果
  */
 export interface TransactionResult {
   txid: string;
@@ -136,22 +154,22 @@ export interface TransactionResult {
  */
 export interface TokenTransactionOptions {
   tokenId: string;
-  tokenDecimals?: number; // 可选，向后兼容；amount 直接以 atoms（最小单位）表示
+  tokenDecimals?: number;
   addressIndex?: number;
   feeStrategy?: FeeStrategy;
   tokenStrategy?: TokenStrategy;
-  mnemonic?: string; // 可选：如果提供则使用，否则从环境变量读取
-  chronik?: ChronikClient; // 新增：可选的chronik实例
+  mnemonic?: string;
+  chronik?: ChronikClient;
 }
 
 /**
- * XEC 交易选项（可以是字符串或对象）
+ * XEC 交易选项
  */
 export interface XecTransactionOptions {
   utxoStrategy?: UtxoStrategy;
   addressIndex?: number;
-  mnemonic?: string; // 可选：如果提供则使用，否则从环境变量读取
-  chronik?: ChronikClient; // 新增：可选的chronik实例
+  mnemonic?: string;
+  chronik?: ChronikClient;
 }
 
 /**
@@ -164,8 +182,8 @@ export interface GeneralSendOptions {
   tokenDecimals?: number;
   feeStrategy?: FeeStrategy;
   tokenStrategy?: TokenStrategy;
-  mnemonic?: string; // 可选：如果提供则使用，否则从环境变量读取
-  chronik?: ChronikClient; // 新增：可选的chronik实例
+  mnemonic?: string;
+  chronik?: ChronikClient;
 }
 
 /**

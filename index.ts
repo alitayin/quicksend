@@ -1,6 +1,7 @@
 import { createRawSlpTransaction, createRawAlpTransaction } from './send/tokensend';
 import { createRawXecTransaction } from './send/xecsend';
 import { fetchAgoraOffers as _fetchAgoraOffers, acceptAgoraOffer as _acceptAgoraOffer, buyAgoraTokens as _buyAgoraTokens } from './send/agorabuy';
+import { createAgoraOffer as _createAgoraOffer } from './send/agorasell';
 import {
   Recipient,
   TransactionResult,
@@ -14,6 +15,8 @@ import {
   AgoraBuyResult,
   AgoraBuyOptions,
   AgoraBuyAggregateResult,
+  AgoraSellOptions,
+  AgoraSellResult,
 } from './types';
 
 /**
@@ -75,6 +78,14 @@ class TransactionManager {
   }
 
   /**
+   * 创建 Agora 卖单（挂单）
+   * @param options - 挂单选项
+   */
+  async createAgoraOffer(options: AgoraSellOptions): Promise<AgoraSellResult> {
+    return await _createAgoraOffer(options);
+  }
+
+  /**
    * 通用发送方法
    * @param type - 交易类型
    * @param recipients - 接收方数组
@@ -130,4 +141,4 @@ export default quick;
 export { TransactionManager };
 
 // 便捷方法导出
-export const { sendSlp, sendAlp, sendXec, send, fetchAgoraOffers, acceptAgoraOffer, buyAgoraTokens } = quick;
+export const { sendSlp, sendAlp, sendXec, send, fetchAgoraOffers, acceptAgoraOffer, buyAgoraTokens, createAgoraOffer } = quick;

@@ -30,3 +30,6 @@ test-local.js
 
 # Local reference libraries
 .local-reference/
+
+# Agora Implementation Guide
+AGORA_IMPLEMENTATION_GUIDE.md

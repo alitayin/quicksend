@@ -228,7 +228,11 @@ export async function acceptAgoraOffer(
 
         const fuelUtxos = utxos.filter(utxo => {
             if (utxo.slpToken) return false;
-            if (utxo.isCoinbase && tipHeight > 0 && typeof utxo.blockHeight === 'number' && utxo.blockHeight > 0) {
+            // Coinbase UTXOs need 100 blocks to mature
+            if (utxo.isCoinbase) {
+                if (tipHeight <= 0 || typeof utxo.blockHeight !== 'number' || utxo.blockHeight <= 0) {
+                    return false;
+                }
                 return (tipHeight - utxo.blockHeight + 1) >= 100;
             }
             return true;
