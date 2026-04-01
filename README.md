@@ -149,9 +149,18 @@ Most methods accept an optional `options` object. Parameters like `mnemonic` and
 | `chronik` | `ChronikClient` | Custom Chronik instance | Default library instance |
 | `addressIndex`| `number` | HD wallet address index | `0` |
 
-### Advanced Options
+### Advanced Options (UTXO Strategies)
 
-- **UTXO Strategies**: `utxoStrategy`, `feeStrategy`, `tokenStrategy` support `'all'`, `'minimal'`, or `'largest_first'` to control how inputs are selected.
+Control how inputs are selected to balance between **saving fees** and **cleaning your wallet**.
+
+#### `utxoStrategy` & `feeStrategy` (XEC Selection)
+- `all` (Default): Uses all available XEC UTXOs. Great for merging dust and keeping your wallet clean.
+- `minimal`: Selects the fewest UTXOs needed for the transaction. Minimizes transaction size and saves on network fees.
+
+#### `tokenStrategy` (Token Selection)
+- `all` (Default): Uses all available UTXOs for the specified token ID. Merges token fragments into one.
+- `largest`: Picks the single largest token UTXO. Fast and simple for small sends from a large balance.
+- `minimal`: Picks the smallest single UTXO that can cover the amount. Preserves your large token UTXOs for future use.
 
 ---
 
