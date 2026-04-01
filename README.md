@@ -137,6 +137,24 @@ const cancelResult = await cancelAgoraOffer(myOffers[0], {
 });
 ```
 
+## Options & Defaults
+
+Most methods accept an optional `options` object. Parameters like `mnemonic` and `chronik` are fallback-enabled.
+
+### Common Options
+
+| Parameter | Type | Description | Default |
+| :--- | :--- | :--- | :--- |
+| `mnemonic` | `string` | Wallet mnemonic (12-24 words) | `process.env.MNEMONIC` |
+| `chronik` | `ChronikClient` | Custom Chronik instance | Default library instance |
+| `addressIndex`| `number` | HD wallet address index | `0` |
+
+### Advanced Options
+
+- **UTXO Strategies**: `utxoStrategy`, `feeStrategy`, `tokenStrategy` support `'all'`, `'minimal'`, or `'largest_first'` to control how inputs are selected.
+
+---
+
 ## API Summary
 
 - `sendXec(recipients, options)`: Send XEC to one or more addresses.
