@@ -29,6 +29,8 @@ You can also pass `mnemonic` and `chronik` directly in the `options` object of a
 
 ## Quick Start
 
+All amounts in `ecash-quicksend` are specified in **atoms** (satoshis) using `BigInt` (e.g., `1000n`).
+
 ### Send XEC
 
 ```javascript
@@ -36,7 +38,7 @@ import { sendXec } from 'ecash-quicksend';
 
 const result = await sendXec(
   [{ address: 'ecash:q...', amount: 1000n }],
-  { mnemonic: 'your mnemonic...' }
+  { mnemonic: '...' } // Optional if MNEMONIC env var is set
 );
 console.log(result.txid);
 ```
@@ -51,7 +53,7 @@ await sendSlp(
   [{ address: 'ecash:q...', amount: 500n }],
   { 
     tokenId: '...', 
-    mnemonic: 'your mnemonic...'
+    mnemonic: '...' // Optional
   }
 );
 ```
@@ -68,15 +70,14 @@ import { createAgoraOffer } from 'ecash-quicksend';
 const result = await createAgoraOffer({
   tokenId: '...',
   tokenAmount: 1000n,
-  pricePerToken: 5.5, // XEC per token
-  mnemonic: 'your mnemonic...'
+  pricePerToken: 5.5,
+  mnemonic: '...' // Optional
 });
 ```
 
 ### Buying
 
 **Option 1: Market Buy (Auto-fill)**
-Automatically aggregate and buy tokens from multiple offers until the desired amount is reached.
 
 ```javascript
 import { buyAgoraTokens } from 'ecash-quicksend';
@@ -85,12 +86,11 @@ const result = await buyAgoraTokens({
   tokenId: '...',
   amount: 5000n,
   maxPrice: 2.8,
-  mnemonic: 'your mnemonic...'
+  mnemonic: '...' // Optional
 });
 ```
 
 **Option 2: Manual Buy (Query & Accept)**
-Fetch available offers and manually accept a specific one.
 
 ```javascript
 import { fetchAgoraOffers, acceptAgoraOffer } from 'ecash-quicksend';
@@ -104,63 +104,56 @@ const offers = await fetchAgoraOffers({
 /*
   offers returns Array<AgoraOffer> sorted by price:
   {
-    offer: Object,           // Raw offer data for acceptAgoraOffer
-    pricePerToken: number,   // Price in XEC
-    totalTokenAmount: bigint,// Available atoms
-    totalXEC: number,        // Total XEC cost for entire offer
-    offerType: string        // 'PARTIAL' or 'ONE_TO_ONE'
+    offer: Object,
+    pricePerToken: number,
+    totalTokenAmount: bigint,
+    totalXEC: number,
+    offerType: string
   }
 */
 
-// 2. Accept the best offer (first in sorted list)
+// 2. Accept the best offer
 const result = await acceptAgoraOffer(offers[0], {
   amount: 1000n,
-  mnemonic: 'your mnemonic...'
+  mnemonic: '...' // Optional
 });
 ```
 
 ### Management & Cancellation
-
-Query and cancel your active listings.
 
 ```javascript
 import { fetchMyAgoraOffers, cancelAgoraOffer } from 'ecash-quicksend';
 
 // 1. Fetch your active listings
 const myOffers = await fetchMyAgoraOffers({
-  mnemonic: 'your mnemonic...'
+  mnemonic: '...' // Optional
 });
 
 // 2. Cancel a specific listing
 const cancelResult = await cancelAgoraOffer(myOffers[0], {
-  mnemonic: 'your mnemonic...'
+  mnemonic: '...' // Optional
 });
 ```
 
 ## Options & Defaults
 
-Most methods accept an optional `options` object. Parameters like `mnemonic` and `chronik` are fallback-enabled.
-
 ### Common Options
 
 | Parameter | Type | Description | Default |
 | :--- | :--- | :--- | :--- |
-| `mnemonic` | `string` | Wallet mnemonic (12-24 words) | `process.env.MNEMONIC` |
+| `mnemonic` | `string` | Wallet mnemonic | `process.env.MNEMONIC` |
 | `chronik` | `ChronikClient` | Custom Chronik instance | Default library instance |
 | `addressIndex`| `number` | HD wallet address index | `0` |
 
-### Advanced Options (UTXO Strategies)
+### UTXO Strategies
 
-Control how inputs are selected to balance between **saving fees** and **cleaning your wallet**.
-
-#### `utxoStrategy` & `feeStrategy` (XEC Selection)
-- `all` (Default): Uses all available XEC UTXOs. Great for merging dust and keeping your wallet clean.
-- `minimal`: Selects the fewest UTXOs needed for the transaction. Minimizes transaction size and saves on network fees.
-
-#### `tokenStrategy` (Token Selection)
-- `all` (Default): Uses all available UTXOs for the specified token ID. Merges token fragments into one.
-- `largest`: Picks the single largest token UTXO. Fast and simple for small sends from a large balance.
-- `minimal`: Picks the smallest single UTXO that can cover the amount. Preserves your large token UTXOs for future use.
+- **XEC Selection (`utxoStrategy`, `feeStrategy`)**:
+  - `all` (Default): Uses all available UTXOs. Keeps wallet clean.
+  - `minimal`: Uses fewest UTXOs to save on fees.
+- **Token Selection (`tokenStrategy`)**:
+  - `all` (Default): Uses all token UTXOs (merges them).
+  - `largest`: Picks the single largest token UTXO.
+  - `minimal`: Picks the single smallest sufficient token UTXO.
 
 ---
 
