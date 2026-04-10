@@ -1,6 +1,6 @@
 {
   "name": "ecash-quicksend",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "description": "A unified transaction manager for eCash (XEC), SLP, and ALP token transactions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -44,9 +44,10 @@
     "LICENSE"
   ],
   "dependencies": {
-    "chronik-client": "^3.1.1",
-    "ecash-agora": "^4.0.0",
-    "ecash-lib": "^3.2.0",
+    "chronik-client": "^4.1.0",
+    "ecash-agora": "^4.0.1",
+    "ecash-lib": "^4.12.0",
+    "ecash-wallet": "^5.2.0",
     "wif": "^5.0.0"
   },
   "devDependencies": {
