@@ -9,6 +9,8 @@ import {
   TokenTransactionOptions,
   XecTransactionOptions,
   GeneralSendOptions,
+  XecAppActionOptions,
+  XecAppActionParseResult,
   TransactionType,
   AgoraFetchOptions,
   AgoraOffer,
@@ -22,6 +24,15 @@ import {
   AgoraCancelOptions,
   AgoraCancelResult,
 } from './types';
+export {
+  CASHTAB_PREFIX_HEX,
+  XEC_APP_MESSAGE_BYTE_LIMIT,
+  buildXecAppActionOutput,
+  parseXecAppActionOutput,
+  validateAppMessage,
+  validateAppPrefixHex,
+} from './send/xec-app-action';
+export type { XecAppActionOptions, XecAppActionParseResult } from './types';
 
 /**
  * Unified Transaction Manager
@@ -57,8 +68,7 @@ class TransactionManager {
    * @param options - UTXO strategy or options including mnemonic and chronik
    */
   async sendXec(recipients: Recipient[], options: XecTransactionOptions = {}): Promise<TransactionResult> {
-    const { utxoStrategy = 'all', addressIndex = 0, mnemonic, chronik: chronikClient } = options;
-    return await createRawXecTransaction(recipients, utxoStrategy, addressIndex, mnemonic, chronikClient);
+    return await createRawXecTransaction(recipients, options);
   }
 
   /**
@@ -118,8 +128,14 @@ class TransactionManager {
    * @param options - Transaction options (mnemonic, chronik, etc.)
    */
   async send(type: TransactionType | string, recipients: Recipient[], options: GeneralSendOptions = {}): Promise<TransactionResult> {
+    const hasXecAppAction =
+      typeof options.message !== 'undefined' || typeof options.appPrefixHex !== 'undefined';
+
     // If tokenId is provided, handle it as a token transaction
     if (options.tokenId) {
+      if (hasXecAppAction) {
+        throw new Error('message/appPrefixHex only support XEC transactions');
+      }
       return await this.sendToken(recipients, {
         tokenId: options.tokenId,
         addressIndex: options.addressIndex,
@@ -139,7 +155,9 @@ class TransactionManager {
           utxoStrategy: options.utxoStrategy,
           addressIndex: options.addressIndex,
           mnemonic: options.mnemonic,
-          chronik: options.chronik
+          chronik: options.chronik,
+          message: options.message,
+          appPrefixHex: options.appPrefixHex,
         };
         return await this.sendXec(recipients, xecOptions);
       default:

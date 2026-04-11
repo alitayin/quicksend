@@ -2,8 +2,8 @@ import { getUtxos, selectUtxos } from '../utxo/utxo-utils';
 import { initializeWallet } from '../wallet/wallet-utils';
 import { buildTransactionInputs, createP2pkhScript } from '../transaction/transaction-utils';
 import { buildAndBroadcastTransaction, verifyFee } from '../transaction/transaction-builder';
-import { TransactionResult, UtxoStrategy } from '../types';
-import { ChronikClient } from 'chronik-client';
+import { TransactionResult, XecTransactionOptions } from '../types';
+import { buildXecAppActionOutput } from './xec-app-action';
 
 // Extended recipient interface supporting tokens
 interface ExtendedRecipient {
@@ -28,12 +28,18 @@ interface XecTransactionResult extends TransactionResult {
 
 export async function createRawXecTransaction(
   recipients: ExtendedRecipient[], 
-  utxoStrategy: UtxoStrategy = 'all',
-  addressIndex: number = 0,
-  mnemonic?: string,
-  chronikClient?: ChronikClient
+  options: XecTransactionOptions = {},
 ): Promise<XecTransactionResult> {
   try {
+    const {
+      utxoStrategy = 'all',
+      addressIndex = 0,
+      mnemonic,
+      chronik: chronikClient,
+      message,
+      appPrefixHex,
+    } = options;
+
     // Validate parameters
     if (!Array.isArray(recipients) || recipients.length === 0) {
       throw new Error('recipients must be a non-empty array');
@@ -76,6 +82,10 @@ export async function createRawXecTransaction(
 
     // Build transaction outputs
     const outputs: any[] = [];
+
+    if (typeof message !== 'undefined' || typeof appPrefixHex !== 'undefined') {
+      outputs.push(buildXecAppActionOutput({ message, appPrefixHex }));
+    }
 
     recipients.forEach(recipient => {
       const output: any = {

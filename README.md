@@ -43,6 +43,31 @@ const result = await sendXec(
 console.log(result.txid);
 ```
 
+Add a Cashtab-compatible app message by passing `message`. This uses the default
+Cashtab prefix `00746162`.
+
+```javascript
+await sendXec(
+  [{ address: 'ecash:q...', amount: 1000n }],
+  {
+    mnemonic: '...',
+    message: 'hello from my app',
+  }
+);
+```
+
+Add a custom 4-byte app prefix without a message by passing `appPrefixHex`.
+
+```javascript
+await sendXec(
+  [{ address: 'ecash:q...', amount: 1000n }],
+  {
+    mnemonic: '...',
+    appPrefixHex: '51535434',
+  }
+);
+```
+
 ### Send Tokens (Unified SLP/ALP)
 
 Protocol is automatically detected from UTXO data. No need to specify if it's SLP or ALP.
@@ -148,6 +173,11 @@ const cancelResult = await cancelAgoraOffer(myOffers[0], {
 | `utxoStrategy` | `UtxoStrategy` | XEC selection: `all`, `minimal`, `largest_first` | `all` |
 | `feeStrategy` | `FeeStrategy` | Fee selection: `all`, `minimal`, `largest_first` | `all` |
 | `tokenStrategy` | `TokenStrategy` | Token selection: `all` (merge), `largest`, `minimal` | `all` |
+| `message` | `string` | XEC-only app message. Uses default prefix `00746162` if `appPrefixHex` is omitted. | `undefined` |
+| `appPrefixHex` | `string` | XEC-only custom 4-byte lowercase hex prefix. Can be used with or without `message`. | `undefined` |
+
+`message` and `appPrefixHex` are only supported for `sendXec()` / XEC transactions.
+Token sends keep their protocol-defined `OP_RETURN` handling and reject these options.
 
 ---
 
@@ -164,6 +194,7 @@ const cancelResult = await cancelAgoraOffer(myOffers[0], {
 
 ## Changelog
 
+- v2.2.0: Added XEC app prefix/message support, parser helpers, and live local tests for message and prefix-only broadcasts.
 - v2.0.2: Dynamically calculate minAcceptedAtoms to prevent dust errors.
 - v2.0.0: Unified SLP/ALP handling via auto-detection. Added support for SLP listings on Agora.
 - v1.7.1: Removed tokenDecimals, amounts are now BigInt atoms.

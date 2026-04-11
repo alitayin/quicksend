@@ -16,7 +16,13 @@ const {
 } = require('ecash-lib');
 
 const quick              = require('../dist/index.js').default;
-const { sendXec, sendSlp, sendAlp } = require('../dist/index.js');
+const {
+    sendXec,
+    sendSlp,
+    sendAlp,
+    CASHTAB_PREFIX_HEX,
+    parseXecAppActionOutput,
+} = require('../dist/index.js');
 
 const { FakeChronik, parseTx, computeTxid, assertOutputCount } = require('./helpers.js');
 const {
@@ -60,6 +66,63 @@ describe('sendXec', () => {
 
         assertOutputCount(chronik, 4, assert);
         assert.equal(result.totalSent, 6000n);
+    });
+
+    test('message only: prepends Cashtab-style OP_RETURN', async () => {
+        const chronik = new FakeChronik([UTXO_XEC_100K]);
+        await sendXec(
+            [{ address: ADDR_1, amount: 1000n }],
+            { ...BASE_OPTS, chronik, message: 'hello xec' },
+        );
+
+        const tx = assertOutputCount(chronik, 3, assert);
+        assert.equal(tx.outputs[0].sats, 0n, 'first output = OP_RETURN');
+        assert.deepEqual(
+            parseXecAppActionOutput(tx.outputs[0].script),
+            {
+                kind: 'message',
+                prefixHex: CASHTAB_PREFIX_HEX,
+                message: 'hello xec',
+            },
+        );
+        assert.equal(tx.outputs[1].sats, 1000n, 'second output = recipient');
+    });
+
+    test('prefix-only: prepends app marker OP_RETURN', async () => {
+        const chronik = new FakeChronik([UTXO_XEC_100K]);
+        await sendXec(
+            [{ address: ADDR_1, amount: 1000n }],
+            { ...BASE_OPTS, chronik, appPrefixHex: '51535434' },
+        );
+
+        const tx = assertOutputCount(chronik, 3, assert);
+        assert.equal(tx.outputs[0].sats, 0n, 'first output = OP_RETURN');
+        assert.deepEqual(
+            parseXecAppActionOutput(tx.outputs[0].script),
+            {
+                kind: 'prefix_only',
+                prefixHex: '51535434',
+            },
+        );
+        assert.equal(tx.outputs[1].sats, 1000n, 'second output = recipient');
+    });
+
+    test('unified send rejects XEC app data when tokenId is present', async () => {
+        const chronik = new FakeChronik([UTXO_SLP_150, UTXO_FEE_20K]);
+        await assert.rejects(
+            () => quick.send(
+                'xec',
+                [{ address: ADDR_1, amount: 100n }],
+                {
+                    ...BASE_OPTS,
+                    chronik,
+                    tokenId: TOKEN_ID_SLP,
+                    message: 'wrong path',
+                },
+            ),
+            /message\/appPrefixHex only support XEC transactions/,
+        );
+        assert.equal(chronik.broadcasted.length, 0);
     });
 });
 

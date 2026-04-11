@@ -186,9 +186,24 @@ export interface TokenTransactionOptions {
 }
 
 /**
+ * XEC app action options
+ */
+export interface XecAppActionOptions {
+  message?: string;
+  appPrefixHex?: string;
+}
+
+/**
+ * Parsed XEC app action
+ */
+export type XecAppActionParseResult =
+  | { kind: 'message'; prefixHex: string; message: string }
+  | { kind: 'prefix_only'; prefixHex: string };
+
+/**
  * XEC transaction options
  */
-export interface XecTransactionOptions {
+export interface XecTransactionOptions extends XecAppActionOptions {
   utxoStrategy?: UtxoStrategy;
   addressIndex?: number;
   mnemonic?: string;
@@ -198,7 +213,7 @@ export interface XecTransactionOptions {
 /**
  * General send method options
  */
-export interface GeneralSendOptions {
+export interface GeneralSendOptions extends XecAppActionOptions {
   utxoStrategy?: UtxoStrategy;
   addressIndex?: number;
   tokenId?: string;
@@ -227,3 +242,32 @@ export type FeeStrategy = 'all' | 'minimal' | 'largest_first';
  * Token UTXO selection strategy type
  */
 export type TokenStrategy = 'largest' | 'minimal' | 'all';
+
+/**
+ * Transaction error types for type-safe error handling
+ */
+export type TransactionError =
+  | { type: 'NETWORK_ERROR'; message: string; statusCode?: number }
+  | { type: 'VALIDATION_ERROR'; message: string; field?: string }
+  | { type: 'INSUFFICIENT_BALANCE'; required: bigint; available: bigint; message: string }
+  | { type: 'UNKNOWN_ERROR'; message: string };
+
+/**
+ * Normalize unknown error to TransactionError
+ */
+export function normalizeError(error: unknown): TransactionError {
+  if (error instanceof Error) {
+    return { type: 'UNKNOWN_ERROR', message: error.message };
+  }
+  if (typeof error === 'string') {
+    return { type: 'UNKNOWN_ERROR', message: error };
+  }
+  return { type: 'UNKNOWN_ERROR', message: 'Unknown error occurred' };
+}
+
+/**
+ * Extract message from TransactionError
+ */
+export function getErrorMessage(error: TransactionError): string {
+  return error.message;
+}
