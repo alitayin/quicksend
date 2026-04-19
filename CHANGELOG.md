@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-04-19
+
+### Added
+- Optional `feeOutput` support for Agora buys, allowing taker transactions to append a platform-fee XEC output
+- `local-test6.ts` to live-test buying `XECX` with an exact 1% Agora platform fee output
+
+### Changed
+- Agora buy results now report `swapFeePaid`, and aggregate buys report `totalSwapFeePaid`
+
+### Fixed
+- Agora buy fee handling now rejects sub-dust fee outputs unless an explicit `minSats` floor is configured
+
+## [2.2.0]
+
+### Added
+- XEC app prefix/message support, parser helpers, and live local tests for message and prefix-only broadcasts
+
 ## [2.1.0] - 2026-04-08
 
 ### Added
@@ -70,6 +87,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump version to 2.0.0 and unify token handling
 - Major refactoring for improved API consistency
 
+[2.3.0]: https://github.com/alitayin/quicksend/compare/v2.2.0...v2.3.0
+[2.2.0]: https://github.com/alitayin/quicksend/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/alitayin/quicksend/compare/v2.0.2...v2.1.0
 [2.0.2]: https://github.com/alitayin/quicksend/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/alitayin/quicksend/compare/v2.0.0...v2.0.1

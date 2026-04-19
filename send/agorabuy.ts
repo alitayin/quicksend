@@ -1,6 +1,10 @@
 import { Agora } from 'ecash-agora';
 import {
+    Address,
     P2PKHSignatory,
+    DEFAULT_DUST_SATS,
+    DEFAULT_FEE_SATS_PER_KB,
+    EccDummy,
     fromHex,
     Script,
     ALL_BIP143,
@@ -17,10 +21,15 @@ import {
     AgoraBuyResult,
     AgoraBuyOptions,
     AgoraBuyAggregateResult,
-    Utxo
+    AgoraFeeOutput,
+    Utxo,
+    normalizeError,
+    getErrorMessage
 } from '../types';
 
 const ecc = new Ecc();
+const AGORA_DUST_SATS = DEFAULT_DUST_SATS;
+const AGORA_FEE_PER_KB = DEFAULT_FEE_SATS_PER_KB;
 
 /**
  * Fixed covenant keypair for Agora protocol
@@ -80,6 +89,147 @@ function getTokenAtoms(token: any): bigint {
         return typeof token.amount === 'bigint' ? token.amount : BigInt(token.amount);
     }
     return 0n;
+}
+
+type AgoraBuilderOutput = { sats: bigint; script: Script } | Script;
+
+interface AgoraTxBuilderLike {
+    inputs: Array<{ input: { signData?: { sats: bigint | number } } }>;
+    sign: (params?: { ecc?: Ecc | EccDummy; feePerKb?: bigint; dustSats?: bigint }) => {
+        outputs: Array<{ sats: bigint | number }>;
+        ser: () => Uint8Array;
+    };
+}
+
+interface AgoraOfferWithPrivateBuilder {
+    _acceptTxBuilder?: (params: {
+        covenantSk: Uint8Array;
+        covenantPk: Uint8Array;
+        fuelInputs: any[];
+        extraOutputs: AgoraBuilderOutput[];
+        acceptedAtoms?: bigint;
+        allowUnspendable?: boolean;
+    }) => AgoraTxBuilderLike;
+}
+
+/**
+ * Calculate swap fee sats from a maker payout amount.
+ * Uses ceiling division.
+ * Pass minSats explicitly if you want to enforce a floor above the exact rate.
+ */
+export function calculateAgoraFeeSats(
+    askedSats: bigint,
+    feeBps: number,
+    minSats: bigint = 0n
+): bigint {
+    if (askedSats < 0n) {
+        throw new Error('askedSats must be non-negative');
+    }
+    if (!Number.isInteger(feeBps) || feeBps < 0) {
+        throw new Error('feeBps must be a non-negative integer');
+    }
+    if (minSats < 0n) {
+        throw new Error('minSats must be non-negative');
+    }
+    if (feeBps === 0 || askedSats === 0n) {
+        return 0n;
+    }
+
+    const feeSats = (askedSats * BigInt(feeBps) + 9999n) / 10000n;
+    return feeSats === 0n ? 0n : (feeSats < minSats ? minSats : feeSats);
+}
+
+function resolveAgoraFeeOutput(
+    feeOutput: AgoraFeeOutput | undefined,
+    askedSats: bigint
+): { sats: bigint; script: Script } | undefined {
+    if (!feeOutput) {
+        return undefined;
+    }
+
+    if (!feeOutput.address) {
+        throw new Error('feeOutput.address is required');
+    }
+
+    const minSats = feeOutput.minSats ?? 0n;
+    const feeSats = calculateAgoraFeeSats(askedSats, feeOutput.feeBps, minSats);
+    if (feeSats === 0n) {
+        return undefined;
+    }
+    if (feeSats < AGORA_DUST_SATS) {
+        throw new Error(
+            `Calculated Agora fee output ${feeSats} sats is below dust ${AGORA_DUST_SATS} sats. Increase the order size, raise feeBps, or set minSats >= ${AGORA_DUST_SATS}.`
+        );
+    }
+
+    return {
+        sats: feeSats,
+        script: Address.parse(feeOutput.address).toScript(),
+    };
+}
+
+function createAgoraBuyerOutputs(
+    recipientScript: Script,
+    feeOutput?: { sats: bigint; script: Script }
+): AgoraBuilderOutput[] {
+    const outputs: AgoraBuilderOutput[] = [
+        {
+            sats: AGORA_DUST_SATS,
+            script: recipientScript,
+        },
+    ];
+
+    if (feeOutput) {
+        outputs.push(feeOutput);
+    }
+
+    outputs.push(recipientScript);
+    return outputs;
+}
+
+function getAgoraAcceptTxBuilder(
+    offer: any,
+    fuelInputs: any[],
+    extraOutputs: AgoraBuilderOutput[],
+    acceptedAtoms: bigint
+): AgoraTxBuilderLike {
+    const privateBuilder = (offer as AgoraOfferWithPrivateBuilder)._acceptTxBuilder;
+    if (typeof privateBuilder !== 'function') {
+        throw new Error('Installed ecash-agora version does not expose _acceptTxBuilder');
+    }
+
+    return privateBuilder.call(offer, {
+        covenantSk: DUMMY_KEYPAIR.sk,
+        covenantPk: DUMMY_KEYPAIR.pk,
+        fuelInputs,
+        extraOutputs,
+        acceptedAtoms,
+        allowUnspendable: true,
+    });
+}
+
+function sumBuilderInputSats(
+    inputs: Array<{ input: { signData?: { sats: bigint | number } } }>
+): bigint {
+    return inputs.reduce((sum, builderInput) => {
+        const sats = builderInput.input.signData?.sats;
+        return sum + (typeof sats === 'bigint' ? sats : BigInt(sats ?? 0));
+    }, 0n);
+}
+
+function sumTxOutputSats(outputs: Array<{ sats: bigint | number }>): bigint {
+    return outputs.reduce((sum, output) => {
+        return sum + (typeof output.sats === 'bigint' ? output.sats : BigInt(output.sats));
+    }, 0n);
+}
+
+function parseFeeShortfall(error: unknown): bigint | undefined {
+    const message = error instanceof Error ? error.message : String(error);
+    const match = message.match(/Can only pay for (\d+) fees, but (\d+) required/);
+    if (!match) {
+        return undefined;
+    }
+    return BigInt(match[2]) - BigInt(match[1]);
 }
 
 /**
@@ -167,7 +317,7 @@ export async function acceptAgoraOffer(
     options: AgoraAcceptOptions
 ): Promise<AgoraBuyResult> {
     try {
-        const { amount, addressIndex = 0, mnemonic, chronik = defaultChronik } = options;
+        const { amount, addressIndex = 0, mnemonic, chronik = defaultChronik, feeOutput } = options;
         if (amount <= 0n) {
             return { success: false, reason: 'INVALID_AMOUNT', message: 'Amount must be greater than 0' };
         }
@@ -214,6 +364,19 @@ export async function acceptAgoraOffer(
         }
 
         const askedSats = offer.askedSats(acceptedAtoms);
+        let resolvedFeeOutput: { sats: bigint; script: Script } | undefined;
+        try {
+            resolvedFeeOutput = resolveAgoraFeeOutput(feeOutput, askedSats);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            const reason = message.includes('below dust') ? 'FEE_BELOW_DUST' : 'INVALID_FEE_OUTPUT';
+            return {
+                success: false,
+                reason,
+                message
+            };
+        }
+        const swapFeeSats = resolvedFeeOutput?.sats ?? 0n;
         const wallet = initializeWallet(addressIndex, mnemonic);
         const utxos = await getUtxos(wallet.address, chronik);
 
@@ -237,11 +400,13 @@ export async function acceptAgoraOffer(
         }).map(patchUtxoForAgora);
 
         const totalBalance = fuelUtxos.reduce((s, u) => s + (u.sats as bigint), 0n);
-        if (totalBalance < askedSats) {
+        const requiredWithoutNetworkFee = askedSats + swapFeeSats;
+        if (totalBalance < requiredWithoutNetworkFee) {
             return {
                 success: false,
                 reason: 'INSUFFICIENT_BALANCE',
-                message: `Need ${askedSats} sats for price, have ${totalBalance} sats`
+                message: `Need ${requiredWithoutNetworkFee} sats for price and swap fee, have ${totalBalance} sats`,
+                details: { price: askedSats, swapFee: swapFeeSats }
             };
         }
 
@@ -253,30 +418,37 @@ export async function acceptAgoraOffer(
             signatory: P2PKHSignatory(wallet.walletSk, wallet.walletPk, ALL_BIP143)
         }));
 
-        const acceptFeeSats = offer.acceptFeeSats({
-            recipientScript: wallet.walletP2pkh as any,
-            feePerKb: 1000n,
+        const acceptTxBuilder = getAgoraAcceptTxBuilder(
+            offer,
+            fuelInputs as any[],
+            createAgoraBuyerOutputs(wallet.walletP2pkh, resolvedFeeOutput),
             acceptedAtoms
-        });
+        );
 
-        if (totalBalance < (askedSats + acceptFeeSats)) {
-            return {
-                success: false,
-                reason: 'INSUFFICIENT_BALANCE_WITH_FEE',
-                message: `Need ${askedSats + acceptFeeSats} sats total, have ${totalBalance} sats`,
-                details: { price: askedSats, fee: acceptFeeSats }
-            };
+        let networkFeeSats: bigint;
+        try {
+            const measuredTx = acceptTxBuilder.sign({
+                ecc: new EccDummy(),
+                feePerKb: AGORA_FEE_PER_KB,
+                dustSats: AGORA_DUST_SATS
+            });
+            networkFeeSats = sumBuilderInputSats(acceptTxBuilder.inputs) - sumTxOutputSats(measuredTx.outputs);
+        } catch (error) {
+            const shortfall = parseFeeShortfall(error);
+            if (typeof shortfall === 'bigint' && shortfall > 0n) {
+                return {
+                    success: false,
+                    reason: 'INSUFFICIENT_BALANCE_WITH_FEE',
+                    message: `Need at least ${totalBalance + shortfall} sats total including network fee, have ${totalBalance} sats`,
+                    details: { price: askedSats, swapFee: swapFeeSats, shortfall }
+                };
+            }
+            throw error;
         }
 
-        const acceptTx = offer.acceptTx({
-            covenantSk: DUMMY_KEYPAIR.sk,
-            covenantPk: DUMMY_KEYPAIR.pk,
-            fuelInputs: fuelInputs as any,
-            recipientScript: wallet.walletP2pkh as any,
-            acceptedAtoms,
-            dustSats: 546n,
-            feePerKb: 1000n,
-            allowUnspendable: true
+        const acceptTx = acceptTxBuilder.sign({
+            feePerKb: AGORA_FEE_PER_KB,
+            dustSats: AGORA_DUST_SATS
         });
 
         const broadcastRes = await chronik.broadcastTx(toHex(acceptTx.ser()));
@@ -287,17 +459,19 @@ export async function acceptAgoraOffer(
             txid: broadcastRes.txid,
             explorerLink: `https://explorer.e.cash/tx/${broadcastRes.txid}`,
             actualAmount: acceptedAtoms,
-            totalXECPaid: Number(askedSats + acceptFeeSats) / 100,
+            totalXECPaid: Number(askedSats + swapFeeSats + networkFeeSats) / 100,
             pricePerToken: Number(askedSats) / 100 / Number(acceptedAtoms),
-            networkFee: Number(acceptFeeSats) / 100
+            networkFee: Number(networkFeeSats) / 100,
+            swapFeePaid: Number(swapFeeSats) / 100
         };
 
-    } catch (error: any) {
-        console.error('Agora accept failed:', error);
+    } catch (error: unknown) {
+        const txError = normalizeError(error);
+        console.error('Agora accept failed:', txError);
         return {
             success: false,
             reason: 'ERROR',
-            message: error.message || 'Unknown error during Agora purchase'
+            message: getErrorMessage(txError)
         };
     }
 }
@@ -307,11 +481,12 @@ export async function acceptAgoraOffer(
  * Mode 2: target amount + max price, auto-select offers
  */
 export async function buyAgoraTokens(options: AgoraBuyOptions): Promise<AgoraBuyAggregateResult> {
-    const { tokenId, amount, maxPrice, addressIndex, mnemonic, chronik } = options;
+    const { tokenId, amount, maxPrice, addressIndex, mnemonic, chronik, feeOutput } = options;
 
-    const transactions: Array<{ txid: string; amount: bigint; price: number; fee: number }> = [];
+    const transactions: Array<{ txid: string; amount: bigint; price: number; fee: number; swapFee: number }> = [];
     let totalBought = 0n;
     let totalXECPaid = 0;
+    let totalSwapFeePaid = 0;
     let skippedOffers = 0;
 
     try {
@@ -323,6 +498,7 @@ export async function buyAgoraTokens(options: AgoraBuyOptions): Promise<AgoraBuy
                 success: false,
                 totalBought: 0n,
                 totalXECPaid: 0,
+                totalSwapFeePaid: 0,
                 avgPrice: 0,
                 transactions: [],
                 skippedOffers: 0,
@@ -341,7 +517,8 @@ export async function buyAgoraTokens(options: AgoraBuyOptions): Promise<AgoraBuy
                 amount: buyAmount,
                 addressIndex,
                 mnemonic,
-                chronik
+                chronik,
+                feeOutput
             });
 
             if (result.success && result.txid) {
@@ -350,10 +527,12 @@ export async function buyAgoraTokens(options: AgoraBuyOptions): Promise<AgoraBuy
                     txid: result.txid,
                     amount: actualAmount,
                     price: result.pricePerToken || offer.pricePerToken,
-                    fee: result.networkFee || 0
+                    fee: result.networkFee || 0,
+                    swapFee: result.swapFeePaid || 0
                 });
                 totalBought += actualAmount;
                 totalXECPaid += result.totalXECPaid || 0;
+                totalSwapFeePaid += result.swapFeePaid || 0;
             } else {
                 skippedOffers++;
             }
@@ -365,6 +544,7 @@ export async function buyAgoraTokens(options: AgoraBuyOptions): Promise<AgoraBuy
             success: totalBought > 0n,
             totalBought,
             totalXECPaid,
+            totalSwapFeePaid,
             avgPrice,
             transactions,
             skippedOffers,
@@ -373,15 +553,17 @@ export async function buyAgoraTokens(options: AgoraBuyOptions): Promise<AgoraBuy
                 : `Partially filled: bought ${totalBought} of ${amount} tokens`
         };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const txError = normalizeError(error);
         return {
             success: false,
             totalBought,
             totalXECPaid,
+            totalSwapFeePaid,
             avgPrice: totalBought > 0n ? totalXECPaid / Number(totalBought) : 0,
             transactions,
             skippedOffers,
-            message: error.message || 'Unknown error during aggregate purchase'
+            message: getErrorMessage(txError)
         };
     }
 }

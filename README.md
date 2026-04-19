@@ -112,7 +112,11 @@ const result = await buyAgoraTokens({
   tokenId: '...',
   amount: 5000n,
   maxPrice: 2.8,
-  mnemonic: '...' // Optional
+  mnemonic: '...', // Optional
+  feeOutput: {
+    address: 'ecash:q...',
+    feeBps: 50, // 0.5%
+  },
 });
 ```
 
@@ -141,7 +145,12 @@ const offers = await fetchAgoraOffers({
 // 2. Accept the best offer
 const result = await acceptAgoraOffer(offers[0], {
   amount: 1000n,
-  mnemonic: '...' // Optional
+  mnemonic: '...', // Optional
+  feeOutput: {
+    address: 'ecash:q...',
+    feeBps: 100, // 1%
+    minSats: 0n, // exact rate; omit or raise for a fee floor
+  },
 });
 ```
 
@@ -175,9 +184,13 @@ const cancelResult = await cancelAgoraOffer(myOffers[0], {
 | `tokenStrategy` | `TokenStrategy` | Token selection: `all` (merge), `largest`, `minimal` | `all` |
 | `message` | `string` | XEC-only app message. Uses default prefix `00746162` if `appPrefixHex` is omitted. | `undefined` |
 | `appPrefixHex` | `string` | XEC-only custom 4-byte lowercase hex prefix. Can be used with or without `message`. | `undefined` |
+| `feeOutput` | `AgoraFeeOutput` | Agora buy-only extra XEC output appended after the taker token output and before change. `feeBps` is basis points; set `minSats` only if you want a fee floor. | `undefined` |
 
 `message` and `appPrefixHex` are only supported for `sendXec()` / XEC transactions.
 Token sends keep their protocol-defined `OP_RETURN` handling and reject these options.
+Agora `feeOutput` is only supported for `acceptAgoraOffer()` and `buyAgoraTokens()`.
+
+If the calculated Agora fee output is below dust (`546 sats`), the buy call will fail with `FEE_BELOW_DUST` unless you explicitly set `feeOutput.minSats`.
 
 ---
 
@@ -194,6 +207,7 @@ Token sends keep their protocol-defined `OP_RETURN` handling and reject these op
 
 ## Changelog
 
+- v2.3.0: Added optional Agora buy `feeOutput` support, exact-rate fee validation, and `local-test6` for live XECX fee-output verification.
 - v2.2.0: Added XEC app prefix/message support, parser helpers, and live local tests for message and prefix-only broadcasts.
 - v2.0.2: Dynamically calculate minAcceptedAtoms to prevent dust errors.
 - v2.0.0: Unified SLP/ALP handling via auto-detection. Added support for SLP listings on Agora.

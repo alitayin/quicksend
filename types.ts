@@ -22,6 +22,15 @@ export interface AgoraOffer {
 }
 
 /**
+ * Optional swap fee output appended to Agora buy transactions
+ */
+export interface AgoraFeeOutput {
+  address: string;
+  feeBps: number;      // 50 = 0.5%
+  minSats?: bigint;    // Optional fee floor in sats
+}
+
+/**
  * Parameters for acceptAgoraOffer
  */
 export interface AgoraAcceptOptions {
@@ -29,6 +38,7 @@ export interface AgoraAcceptOptions {
   addressIndex?: number;
   mnemonic?: string;
   chronik?: ChronikClient;
+  feeOutput?: AgoraFeeOutput;
 }
 
 /**
@@ -44,6 +54,7 @@ export interface AgoraBuyResult {
   totalXECPaid?: number;
   pricePerToken?: number;
   networkFee?: number;
+  swapFeePaid?: number;
   details?: Record<string, unknown>;
 }
 
@@ -57,6 +68,7 @@ export interface AgoraBuyOptions {
   addressIndex?: number;
   mnemonic?: string;
   chronik?: ChronikClient;
+  feeOutput?: AgoraFeeOutput;
 }
 
 /**
@@ -66,12 +78,14 @@ export interface AgoraBuyAggregateResult {
   success: boolean;
   totalBought: bigint;
   totalXECPaid: number;
+  totalSwapFeePaid: number;
   avgPrice: number;
   transactions: Array<{
     txid: string;
     amount: bigint;
     price: number;
     fee: number;
+    swapFee: number;
   }>;
   skippedOffers: number;
   message?: string;
